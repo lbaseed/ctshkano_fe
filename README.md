@@ -1,2 +1,2 @@
-# skulByte_FE
- skulbyte front end done with react
+# Traders Data Bank
+ CTSH Kano front end done with react
