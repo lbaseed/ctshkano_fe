@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@page { size: auto; margin: 50px}
+input[type="file"] {
+    display: none;
+}
+
+/* Ant Design Table Striped Styles */
+.ant-table-striped .table-row-light {
+    background-color: #ffffff;
+}
+
+.ant-table-striped .table-row-dark {
+    background-color: #fafafa;
+}
+
+.ant-table-striped .table-row-light:hover,
+.ant-table-striped .table-row-dark:hover {
+    background-color: #f0f9ff !important;
+}
+
+/* Action button hover effects */
+.ant-btn-text:hover {
+    background-color: #f3f4f6 !important;
+    border-radius: 6px;
+}
+
+/* Progress bar styling */
+.ant-progress-line {
+    font-size: 12px;
+}
+
+.ant-progress-bg {
+    border-radius: 10px;
+}
