@@ -6,7 +6,8 @@ import {
 	CORE_TRADER_FIELDS,
 	CORE_LOCATION_FIELDS,
 	CORE_GUARANTOR_FIELDS,
-	CORE_NEXTOFKIN_FIELDS
+	CORE_NEXTOFKIN_FIELDS,
+	CORE_LGA_FIELDS
 } from "../fragments";
 
 export const REGISTER_USER = gql`
@@ -105,12 +106,14 @@ export const CREATE_TRADE = gql`
 		$name: String!
 		$businessNature: BusinessNature!
 		$category: String
+		$description: String
 		$options: String
 	) {
 		createTrade(
 			name: $name
 			business_nature: $businessNature
 			category: $category
+			description: $description
 			options: $options
 		) {
 			...coreTradeFields
@@ -125,6 +128,7 @@ export const UPDATE_TRADE = gql`
 		$name: String
 		$businessNature: BusinessNature
 		$category: String
+		$description: String
 		$options: String
 	) {
 		updateTrade(
@@ -132,6 +136,7 @@ export const UPDATE_TRADE = gql`
 			name: $name
 			business_nature: $businessNature
 			category: $category
+			description: $description
 			options: $options
 		) {
 			...coreTradeFields
@@ -148,8 +153,38 @@ export const DELETE_TRADE = gql`
 	}
 `;
 
+export const MERGE_TRADES = gql`
+	${CORE_TRADE_FIELDS}
+	mutation gqlMergeTrades($source_uuid: ID!, $target_uuid: ID!) {
+		mergeTrades(source_uuid: $source_uuid, target_uuid: $target_uuid) {
+			...coreTradeFields
+		}
+	}
+`;
+
+export const BULK_UPDATE_TRADE_LOCATION = gql`
+	mutation gqlBulkUpdateTradeLocation(
+		$updates: [TradeLocationInput!]!
+		$identifier_type: String!
+	) {
+		bulkUpdateTradeLocation(
+			updates: $updates
+			identifier_type: $identifier_type
+		) {
+			success
+			message
+			success_count
+			failed_count
+			not_found_count
+			total_processed
+			errors
+		}
+	}
+`;
+
 export const CREATE_TRADER = gql`
 	${CORE_TRADER_FIELDS}
+	${CORE_LGA_FIELDS}
 	mutation gqlCreateTrader(
 		$surname: String!
 		$otherNames: String
@@ -161,11 +196,12 @@ export const CREATE_TRADER = gql`
 		$pvc: String
 		$nin: String
 		$land_mark: String
+		$business_location: String
+		$trade_location: String
 		$operating_capital: String
-		$location_uuid: ID
 		$trade_uuid: ID
 		$options: String
-		$lga: String
+		$lga_id: ID
 	) {
 		createTrader(
 			surname: $surname
@@ -178,13 +214,17 @@ export const CREATE_TRADER = gql`
 			pvc: $pvc
 			nin: $nin
 			land_mark: $land_mark
+			business_location: $business_location
+			trade_location: $trade_location
 			operating_capital: $operating_capital
 			trade_uuid: $trade_uuid
-			location_uuid: $location_uuid
-			lga: $lga
+			lga_id: $lga_id
 			options: $options
 		) {
 			...coreTraderFields
+			lgaRelation {
+				...coreLgaFields
+			}
 		}
 	}
 `;
@@ -203,12 +243,13 @@ export const UPDATE_TRADER = gql`
 		$pvc: String
 		$nin: String
 		$land_mark: String
+		$business_location: String
+		$trade_location: String
 		$operating_capital: Float
 		$bank_details: String
-		$location_uuid: ID
-		$trade_uuid: ID
+		$tradeId: ID
 		$options: String
-		$lga: String
+		$lga_id: ID
 	) {
 		updateTrader(
 			uuid: $uuid
@@ -222,11 +263,12 @@ export const UPDATE_TRADER = gql`
 			pvc: $pvc
 			nin: $nin
 			land_mark: $land_mark
+			business_location: $business_location
+			trade_location: $trade_location
 			operating_capital: $operating_capital
-			trade_uuid: $trade_uuid
-			location_uuid: $location_uuid
+			trade_id: $tradeId
 			options: $options
-			lga: $lga
+			lga_id: $lga_id
 			bank_details: $bank_details
 		) {
 			...coreTraderFields
@@ -469,17 +511,19 @@ export const CREATE_USER = gql`
 		$name: String!
 		$email: String!
 		$password: String!
-		$confirmPassword: String!
-		$clrs: UserClrs!
+		$password_confirmation: String!
+		$clrs: String!
 		$phone: String
 	) {
 		createUser(
-			name: $name
-			email: $email
-			password: $password
-			password_confirm: $confirmPassword
-			clrs: $clrs
-			phone: $phone
+			input: {
+				name: $name
+				email: $email
+				password: $password
+				password_confirmation: $password_confirmation
+				clrs: $clrs
+				phone: $phone
+			}
 		) {
 			...coreUserFields
 		}
@@ -491,6 +535,60 @@ export const UPDATE_USER_AVATAR = gql`
 	mutation gqlUpdateUserAvatar($file: Upload!) {
 		updateUserAvatar(file: $file) {
 			...coreUserFields
+		}
+	}
+`;
+
+export const UPDATE_USER = gql`
+	${CORE_USER_FIELDS}
+	mutation gqlUpdateUser(
+		$uuid: ID!
+		$name: String
+		$email: String
+		$clrs: String
+		$phone: String
+	) {
+		updateUser(
+			uuid: $uuid
+			input: { name: $name, email: $email, clrs: $clrs, phone: $phone }
+		) {
+			...coreUserFields
+		}
+	}
+`;
+
+export const DELETE_USER = gql`
+	mutation gqlDeleteUser($uuid: ID!) {
+		deleteUser(uuid: $uuid)
+	}
+`;
+
+export const RESET_USER_PASSWORD = gql`
+	${CORE_USER_FIELDS}
+	mutation gqlResetUserPassword($uuid: ID!, $password: String!) {
+		resetUserPassword(uuid: $uuid, password: $password) {
+			...coreUserFields
+		}
+	}
+`;
+
+export const TOGGLE_USER_ACTIVATION = gql`
+	${CORE_USER_FIELDS}
+	mutation gqlToggleUserActivation($uuid: ID!) {
+		toggleUserActivation(uuid: $uuid) {
+			...coreUserFields
+		}
+	}
+`;
+
+export const BULK_TOGGLE_USER_ACTIVATION = gql`
+	mutation gqlBulkToggleUserActivation($uuids: [ID!]!, $is_active: Boolean!) {
+		bulkToggleUserActivation(uuids: $uuids, is_active: $is_active) {
+			success
+			message
+			affected_count
+			failed_count
+			errors
 		}
 	}
 `;

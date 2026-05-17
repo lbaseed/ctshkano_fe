@@ -6,7 +6,15 @@ import Trade from "./views/admin/Trade/Trade";
 import ViewTraders from "./views/admin/ViewTraders/ViewTraders";
 import EmpowermentSchemes from "./views/admin/EmpowermentScheme/EmpowermentSchemes";
 import EmpowermentSchemeForm from "./views/admin/EmpowermentScheme/EmpowermentSchemeForm";
-import AddTraderToScheme from "./views/admin/EmpowermentScheme/AddTraderToScheme";
+import EmpowermentSchemeDetail from "./views/admin/EmpowermentScheme/EmpowermentSchemeDetail";
+import ViewScheme from "./views/admin/EmpowermentScheme/ViewScheme";
+import SchemeApplicationsManagement from "./views/admin/EmpowermentScheme/SchemeApplicationsManagement";
+import UserManagement from "./views/admin/UserManagement/UserManagement";
+import LgaManagement from "./views/admin/LgaManagement/LgaManagement";
+import TradeLocationManagement from "./views/admin/TradeLocation/TradeLocationManagement";
+import Profile from "./views/Profile";
+import FixTradeLocation from "./views/admin/Fix/FixTradeLocation";
+import SchemeViewerDashboard from "./views/admin/EmpowermentScheme/SchemeViewerDashboard";
 
 export const Features = {
 	super_admin: [
@@ -24,7 +32,7 @@ export const Features = {
 					element: <Dashboard />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "Create Trade",
@@ -35,7 +43,7 @@ export const Features = {
 					element: <Trade />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "Create Location",
@@ -46,7 +54,29 @@ export const Features = {
 					element: <Location />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
+				},
+				{
+					name: "Manage LGAs",
+					path: "/lga-management",
+					icon: (
+						<i className="fas fa-map-marked-alt text-blueGray-400 mr-2 text-sm"></i>
+					),
+					element: <LgaManagement />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
+				},
+				{
+					name: "Manage Trade Locations",
+					path: "/trade-locations",
+					icon: (
+						<i className="fas fa-map-pin text-blueGray-400 mr-2 text-sm"></i>
+					),
+					element: <TradeLocationManagement />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				}
 			]
 		},
@@ -66,7 +96,7 @@ export const Features = {
 					element: <CreateTrader />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "View Traders",
@@ -77,7 +107,7 @@ export const Features = {
 					element: <ViewTraders />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "Search Trader",
@@ -88,7 +118,7 @@ export const Features = {
 					element: <Trader />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				}
 			]
 		},
@@ -100,17 +130,6 @@ export const Features = {
 			icon: "",
 			routes: [
 				{
-					name: "View Schemes",
-					path: "/empowerment-schemes",
-					icon: (
-						<i className="fas fa-hand-holding-heart text-blueGray-400 mr-2 text-sm"></i>
-					),
-					element: <EmpowermentSchemes />,
-					className:
-						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
-				},
-				{
 					name: "Create Scheme",
 					path: "/empowerment-schemes/create",
 					icon: (
@@ -119,7 +138,18 @@ export const Features = {
 					element: <EmpowermentSchemeForm />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
+				},
+				{
+					name: "View Schemes",
+					path: "/empowerment-schemes",
+					icon: (
+						<i className="fas fa-hand-holding-heart text-blueGray-400 mr-2 text-sm"></i>
+					),
+					element: <EmpowermentSchemes />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				},
 				{
 					name: "Edit Scheme",
@@ -128,38 +158,67 @@ export const Features = {
 					element: <EmpowermentSchemeForm />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: "hidden"
+					visible: false
 				},
 				{
 					name: "View Scheme Details",
 					path: "/empowerment-schemes/:uuid",
 					icon: <i className="fas fa-eye text-blueGray-400 mr-2 text-sm"></i>,
-					element: <EmpowermentSchemes />,
+					element: <EmpowermentSchemeDetail />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: "hidden"
+					visible: false
 				},
 				{
-					name: "Add Trader to Scheme",
-					path: "/empowerment-schemes/add-trader",
+					name: "View Scheme",
+					path: "/empowerment-schemes/view-scheme",
 					icon: (
 						<i className="fas fa-user-plus text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: <AddTraderToScheme />,
+					element: <ViewScheme />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
-					name: "Add Trader to Specific Scheme",
-					path: "/empowerment-schemes/:uuid/add-trader",
+					name: "View Scheme (with UUID)",
+					path: "/empowerment-schemes/view-scheme/:uuid",
 					icon: (
 						<i className="fas fa-user-plus text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: <AddTraderToScheme />,
+					element: <ViewScheme />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: "hidden"
+					visible: false
+				},
+				{
+					name: "Manage Applications",
+					path: "/empowerment-schemes/:uuid/applications",
+					icon: (
+						<i className="fas fa-clipboard-list text-blueGray-400 mr-2 text-sm"></i>
+					),
+					element: <SchemeApplicationsManagement />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: false
+				}
+			]
+		},
+		{
+			title: "User Management",
+			path: "",
+			className:
+				"text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block  transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+			icon: "",
+			routes: [
+				{
+					name: "Manage Users",
+					path: "/user-management",
+					icon: <i className="fas fa-users text-blueGray-400 mr-2 text-sm"></i>,
+					element: <UserManagement />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				}
 			]
 		}
@@ -179,7 +238,16 @@ export const Features = {
 					element: <Dashboard />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
+				},
+				{
+					name: "Profile",
+					path: "/profile",
+					icon: <i className="fas fa-user text-blueGray-400 mr-2 text-sm"></i>,
+					element: <Profile />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				},
 				{
 					name: "Create Trade",
@@ -190,7 +258,7 @@ export const Features = {
 					element: null,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				}
 			]
 		},
@@ -207,10 +275,10 @@ export const Features = {
 					icon: (
 						<i className="fas fa-database text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <CreateTrader />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "View Traders",
@@ -218,10 +286,10 @@ export const Features = {
 					icon: (
 						<i className="fas fa-shopping-basket text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <ViewTraders />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "Search Trader",
@@ -229,10 +297,10 @@ export const Features = {
 					icon: (
 						<i className="fas fa-cart-plus text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <Trader />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				}
 			]
 		},
@@ -244,17 +312,6 @@ export const Features = {
 			icon: "",
 			routes: [
 				{
-					name: "View Schemes",
-					path: "/empowerment-schemes",
-					icon: (
-						<i className="fas fa-hand-holding-heart text-blueGray-400 mr-2 text-sm"></i>
-					),
-					element: <EmpowermentSchemes />,
-					className:
-						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
-				},
-				{
 					name: "Create Scheme",
 					path: "/empowerment-schemes/create",
 					icon: (
@@ -263,7 +320,18 @@ export const Features = {
 					element: <EmpowermentSchemeForm />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
+				},
+				{
+					name: "View Schemes",
+					path: "/empowerment-schemes",
+					icon: (
+						<i className="fas fa-hand-holding-heart text-blueGray-400 mr-2 text-sm"></i>
+					),
+					element: <EmpowermentSchemes />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				},
 				{
 					name: "Edit Scheme",
@@ -272,38 +340,67 @@ export const Features = {
 					element: <EmpowermentSchemeForm />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: "hidden"
+					visible: false
 				},
 				{
 					name: "View Scheme Details",
 					path: "/empowerment-schemes/:uuid",
 					icon: <i className="fas fa-eye text-blueGray-400 mr-2 text-sm"></i>,
-					element: <EmpowermentSchemes />,
+					element: <EmpowermentSchemeDetail />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: "hidden"
+					visible: false
 				},
 				{
 					name: "Add Trader to Scheme",
-					path: "/empowerment-schemes/add-trader",
+					path: "/empowerment-schemes/scheme",
 					icon: (
 						<i className="fas fa-user-plus text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: <AddTraderToScheme />,
+					element: <ViewScheme />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: false
 				},
 				{
-					name: "Add Trader to Specific Scheme",
-					path: "/empowerment-schemes/:uuid/add-trader",
+					name: "Add Trader to Scheme (with UUID)",
+					path: "/empowerment-schemes/scheme/:uuid",
 					icon: (
 						<i className="fas fa-user-plus text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: <AddTraderToScheme />,
+					element: <ViewScheme />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: "hidden"
+					visible: false
+				},
+				{
+					name: "Manage Applications",
+					path: "/empowerment-schemes/:uuid/applications",
+					icon: (
+						<i className="fas fa-clipboard-list text-blueGray-400 mr-2 text-sm"></i>
+					),
+					element: <SchemeApplicationsManagement />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: false
+				}
+			]
+		},
+		{
+			title: "User Management",
+			path: "",
+			className:
+				"text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block  transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+			icon: "",
+			routes: [
+				{
+					name: "Manage Users",
+					path: "/user-management",
+					icon: <i className="fas fa-users text-blueGray-400 mr-2 text-sm"></i>,
+					element: <UserManagement />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				}
 			]
 		}
@@ -323,7 +420,16 @@ export const Features = {
 					element: <Dashboard />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
+				},
+				{
+					name: "Profile",
+					path: "/profile",
+					icon: <i className="fas fa-user text-blueGray-400 mr-2 text-sm"></i>,
+					element: <Profile />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				}
 			]
 		},
@@ -340,10 +446,10 @@ export const Features = {
 					icon: (
 						<i className="fas fa-shopping-basket text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <ViewTraders />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "Search Trader",
@@ -351,10 +457,10 @@ export const Features = {
 					icon: (
 						<i className="fas fa-cart-plus text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <Trader />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				}
 			]
 		}
@@ -371,10 +477,19 @@ export const Features = {
 					name: "Home",
 					path: "/dashboard",
 					icon: <i className="fas fa-home text-blueGray-400 mr-2 text-sm"></i>,
-					element: null,
+					element: <Dashboard />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
+				},
+				{
+					name: "Profile",
+					path: "/profile",
+					icon: <i className="fas fa-user text-blueGray-400 mr-2 text-sm"></i>,
+					element: <Profile />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				}
 			]
 		},
@@ -391,10 +506,10 @@ export const Features = {
 					icon: (
 						<i className="fas fa-database text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <CreateTrader />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "View Traders",
@@ -402,10 +517,10 @@ export const Features = {
 					icon: (
 						<i className="fas fa-shopping-basket text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <ViewTraders />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
 				},
 				{
 					name: "Search Trader",
@@ -413,10 +528,32 @@ export const Features = {
 					icon: (
 						<i className="fas fa-cart-plus text-blueGray-400 mr-2 text-sm"></i>
 					),
-					element: null,
+					element: <Trader />,
 					className:
 						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
-					status: ""
+					visible: true
+				}
+			]
+		}
+	],
+	scheme_viewer: [
+		{
+			title: "Empowerment Schemes",
+			path: "",
+			className:
+				"text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block  transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+			icon: "",
+			routes: [
+				{
+					name: "Schemes Dashboard",
+					path: "/scheme-viewer",
+					icon: (
+						<i className="fas fa-hand-holding-heart text-blueGray-400 mr-2 text-sm"></i>
+					),
+					element: <SchemeViewerDashboard />,
+					className:
+						"flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700",
+					visible: true
 				}
 			]
 		}

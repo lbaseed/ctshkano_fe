@@ -1,5 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@apollo/client";
+import { Popconfirm, Tooltip } from "antd";
 import { GET_EMPOWERMENT_SCHEME } from "../../../gql/queries/empowermentSchemeQueries";
 import { DELETE_EMPOWERMENT_SCHEME } from "../../../gql/mutations/empowermentSchemeMutations";
 import Loading from "../../../components/Loading/Loading";
@@ -29,14 +30,10 @@ const EmpowermentSchemeDetail = () => {
 
 	const scheme = data?.empowermentScheme;
 
+	const hasBeneficiaries = (scheme?.traders_count ?? 0) > 0;
+
 	const handleDelete = () => {
-		if (
-			window.confirm(
-				"Are you sure you want to delete this empowerment scheme? This action cannot be undone."
-			)
-		) {
-			deleteScheme({ variables: { id: scheme.id } });
-		}
+		deleteScheme({ variables: { id: scheme.id } });
 	};
 
 	const getStatusBadge = (status) => {
@@ -136,16 +133,33 @@ const EmpowermentSchemeDetail = () => {
 											className="bg-yellow-500 text-white active:bg-yellow-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">
 											Edit
 										</Link>
-										<Link
-											to={`/admin/empowerment-schemes/${scheme.uuid}/applications`}
-											className="bg-green-500 text-white active:bg-green-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">
-											Manage Applications
-										</Link>
-										<button
-											onClick={handleDelete}
-											className="bg-red-500 text-white active:bg-red-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150">
-											Delete
-										</button>
+										<Tooltip
+											title={
+												hasBeneficiaries
+													? `Cannot delete: this scheme has ${scheme.traders_count} trader(s) attached`
+													: "Delete this scheme"
+											}>
+											<span>
+												<Popconfirm
+													title="Delete empowerment scheme"
+													description="This action cannot be undone. Are you sure?"
+													okText="Yes, delete"
+													okType="danger"
+													cancelText="Cancel"
+													onConfirm={handleDelete}
+													disabled={hasBeneficiaries}>
+													<button
+														disabled={hasBeneficiaries}
+														className={`text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150 ${
+															hasBeneficiaries
+																? "bg-gray-300 text-gray-500 cursor-not-allowed"
+																: "bg-red-500 text-white active:bg-red-600"
+														}`}>
+														Delete
+													</button>
+												</Popconfirm>
+											</span>
+										</Tooltip>
 									</div>
 								</div>
 							</div>
@@ -212,22 +226,33 @@ const EmpowermentSchemeDetail = () => {
 										<div className="text-blueGray-700 text-sm">
 											<div className="flex items-center">
 												<span>
-													{scheme.current_participants} /{" "}
-													{scheme.max_participants}
+													{scheme.traders_count} / {scheme.max_participants}
 												</span>
 												<div className="ml-3 flex-1 bg-gray-200 rounded-full h-2">
 													<div
 														className="bg-indigo-600 h-2 rounded-full"
 														style={{
-															width: `${scheme.progress_percentage}%`
+															width: `${Math.min(Math.round((scheme.traders_count / scheme.max_participants) * 100), 100)}%`
 														}}></div>
 												</div>
 												<span className="ml-2 text-xs">
-													({scheme.progress_percentage}%)
+													(
+													{Math.min(
+														Math.round(
+															(scheme.traders_count / scheme.max_participants) *
+																100
+														),
+														100
+													)}
+													%)
 												</span>
 											</div>
 											<div className="mt-1 text-xs text-gray-500">
-												{scheme.available_slots} slots available
+												{Math.max(
+													0,
+													scheme.max_participants - scheme.traders_count
+												)}{" "}
+												slots available
 											</div>
 										</div>
 									</div>

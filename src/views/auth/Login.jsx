@@ -41,7 +41,10 @@ const Login = () => {
 				});
 				dispatch({ type: LOADING, payload: false });
 
-				navigate("/admin/dashboard");
+				const role = result.data.login.user?.clrs;
+				navigate(
+					role === "SCHEME_VIEWER" ? "/admin/scheme-viewer" : "/admin/dashboard"
+				);
 
 				// window.location.reload();
 			} catch (err) {
@@ -120,7 +123,7 @@ const Login = () => {
 
 									<div className="text-center">
 										<button
-											className="w-full bg-black-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+											className="w-full hover:bg-blue-700 text-black font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
 											type="submit">
 											Sign In
 										</button>
@@ -132,13 +135,13 @@ const Login = () => {
 							<div className="w-1/2">
 								<Link
 									to="/auth/reset-password"
-									className="text-white hover:text-blue-200 transition-colors duration-200">
+									className="text-black hover:text-blue-200 transition-colors duration-200">
 									<small className="text-sm font-medium">
 										Forgot Password?
 									</small>
 								</Link>
 							</div>
-							<div className="w-1/2 text-right">
+							{/* <div className="w-1/2 text-right">
 								<Link
 									to="/auth/register"
 									className="text-white hover:text-blue-200 transition-colors duration-200">
@@ -146,7 +149,7 @@ const Login = () => {
 										Create new account
 									</small>
 								</Link>
-							</div>
+							</div> */}
 						</div>
 					</div>
 				</div>

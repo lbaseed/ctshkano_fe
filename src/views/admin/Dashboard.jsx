@@ -43,11 +43,22 @@ import {
 } from "@ant-design/icons";
 // Charts will be available when @ant-design/plots is installed
 import moment from "moment";
-import {
-	GET_TRADERS,
-	GET_TRADES,
-	GET_LOCATIONS
-} from "../../gql/queries/queries";
+import { GET_DASHBOARD_METRICS } from "../../gql/queries/queries";
+
+/**
+ * Note: The GET_DASHBOARD_METRICS query requires backend implementation
+ *
+ * Backend needs to implement:
+ * 1. dashboardMetrics resolver that returns:
+ *    - totalTraders, totalTrades, totalLocations
+ *    - totalMaleTraders, totalFemaleTraders
+ *    - tradersWithBankDetails, tradersWithPhotos
+ *    - tradersPerTrade array with tradeId, tradeName, count
+ *    - tradersPerLocation array with locationId, locationName, count
+ *    - monthlyRegistrations array with month, year, count
+ *
+ * 2. recentTraders resolver that returns the 5 most recent traders
+ */
 import {
 	GET_EMPOWERMENT_SCHEMES,
 	GET_EMPOWERMENT_SCHEME_APPLICATIONS
@@ -64,21 +75,15 @@ const Dashboard = () => {
 	]);
 	const [selectedPeriod, setSelectedPeriod] = useState("month");
 
-	// Fetch data using existing queries
-	const { data: tradersData, loading: tradersLoading } = useQuery(GET_TRADERS, {
-		fetchPolicy: "cache-and-network"
+	// Fetch dashboard metrics
+	const {
+		data: dashboardData,
+		loading: dashboardLoading,
+		error: dashboardError
+	} = useQuery(GET_DASHBOARD_METRICS, {
+		fetchPolicy: "cache-and-network",
+		errorPolicy: "all" // Continue loading other data even if this fails
 	});
-
-	const { data: tradesData, loading: tradesLoading } = useQuery(GET_TRADES, {
-		fetchPolicy: "cache-and-network"
-	});
-
-	const { data: locationsData, loading: locationsLoading } = useQuery(
-		GET_LOCATIONS,
-		{
-			fetchPolicy: "cache-and-network"
-		}
-	);
 
 	const { data: schemesData, loading: schemesLoading } = useQuery(
 		GET_EMPOWERMENT_SCHEMES,
@@ -96,25 +101,23 @@ const Dashboard = () => {
 		}
 	);
 
-	const loading =
-		tradersLoading ||
-		tradesLoading ||
-		locationsLoading ||
-		schemesLoading ||
-		applicationsLoading;
+	const loading = dashboardLoading || schemesLoading || applicationsLoading;
 
 	// Process data
-	const traders = tradersData?.traders || [];
-	const trades = tradesData?.trades || [];
-	const locations = locationsData?.locations || [];
+	const dashboardMetrics = dashboardData?.dashboardMetrics || {};
+	const recentTraders = dashboardData?.recentTraders || [];
 	const schemes = schemesData?.empowermentSchemes?.data || [];
 	const applications =
 		applicationsData?.empowermentSchemeApplications?.data || [];
 
-	// Calculate statistics
-	const totalTraders = traders.length;
-	const totalTrades = trades.length;
-	const totalLocations = locations.length;
+	// Calculate statistics from dashboard metrics
+	const totalTraders = dashboardMetrics.totalTraders || 0;
+	const totalTrades = dashboardMetrics.totalTrades || 0;
+	const totalLocations = dashboardMetrics.totalLocations || 0;
+	const totalMaleTraders = dashboardMetrics.totalMaleTraders || 0;
+	const totalFemaleTraders = dashboardMetrics.totalFemaleTraders || 0;
+	const tradersWithBankDetails = dashboardMetrics.tradersWithBankDetails || 0;
+	const tradersWithPhotos = dashboardMetrics.tradersWithPhotos || 0;
 	const totalSchemes = schemes.length;
 	const activeSchemes = schemes.filter((s) => s.status === "ACTIVE").length;
 	const totalApplications = applications.length;
@@ -128,10 +131,7 @@ const Dashboard = () => {
 		(a) => a.status === "REJECTED"
 	).length;
 
-	// Calculate recent data
-	const recentTraders = traders
-		.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-		.slice(0, 5);
+	// Recent traders are already provided by the dashboard query
 
 	const recentApplications = applications
 		.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
@@ -153,12 +153,13 @@ const Dashboard = () => {
 
 	// Custom Naira Icon Component
 	const NairaIcon = ({ style }) => (
-		<span style={{ 
-			fontWeight: 'bold', 
-			fontSize: '16px', 
-			fontFamily: 'Arial, sans-serif',
-			...style 
-		}}>
+		<span
+			style={{
+				fontWeight: "bold",
+				fontSize: "16px",
+				fontFamily: "Arial, sans-serif",
+				...style
+			}}>
 			₦
 		</span>
 	);
@@ -170,12 +171,11 @@ const Dashboard = () => {
 		{ type: "Rejected", value: rejectedApplications, color: "#ff4d4f" }
 	].filter((item) => item.value > 0);
 
-	const tradeDistributionData = trades
-		.map((trade) => ({
-			trade: trade.name,
-			count: traders.filter((trader) => trader.trade_id === trade.id).length
-		}))
-		.filter((item) => item.count > 0);
+	const tradeDistributionData =
+		dashboardMetrics.tradersPerTrade?.map((item) => ({
+			trade: item.tradeName,
+			count: item.count
+		})) || [];
 
 	const schemeStatusData = [
 		{
@@ -196,16 +196,16 @@ const Dashboard = () => {
 		}
 	].filter((item) => item.count > 0);
 
-	// Monthly registration trend (mock data for demonstration)
-	const monthlyTrendData = Array.from({ length: 6 }, (_, i) => {
-		const date = moment().subtract(5 - i, "months");
-		return {
-			month: date.format("MMM YYYY"),
-			traders: Math.floor(Math.random() * 50) + 10,
-			applications: Math.floor(Math.random() * 30) + 5,
-			schemes: Math.floor(Math.random() * 10) + 2
-		};
-	});
+	// Monthly registration trend from dashboard metrics
+	const monthlyTrendData =
+		dashboardMetrics.monthlyRegistrations?.map((item) => ({
+			month: `${moment()
+				.month(item.month - 1)
+				.format("MMM")} ${item.year}`,
+			traders: item.count,
+			applications: 0, // Will be added when applications data is available
+			schemes: 0 // Will be added when schemes data is available
+		})) || [];
 
 	const formatCurrency = (amount) => {
 		return new Intl.NumberFormat("en-NG", {
@@ -213,7 +213,9 @@ const Dashboard = () => {
 			currency: "NGN",
 			minimumFractionDigits: 0,
 			currencyDisplay: "symbol"
-		}).format(amount).replace("NGN", "₦");
+		})
+			.format(amount)
+			.replace("NGN", "₦");
 	};
 
 	const getStatusColor = (status) => {
@@ -239,6 +241,25 @@ const Dashboard = () => {
 					minHeight: "50vh"
 				}}>
 				<Spin size="large" tip="Loading dashboard data..." />
+			</div>
+		);
+	}
+
+	// Show error message if dashboard metrics query fails
+	if (dashboardError) {
+		return (
+			<div style={{ padding: "24px" }}>
+				<Alert
+					message="Dashboard Metrics Not Available"
+					description="The dashboard metrics endpoint is not yet implemented on the backend. Please implement the GET_DASHBOARD_METRICS GraphQL query resolver."
+					type="warning"
+					showIcon
+					style={{ marginBottom: "24px" }}
+				/>
+				<Text>
+					The dashboard will show full metrics once the backend implementation
+					is complete.
+				</Text>
 			</div>
 		);
 	}
@@ -287,22 +308,19 @@ const Dashboard = () => {
 					<Card>
 						<Statistic
 							title="Total Traders"
-							value={totalTraders}
+							value={totalTraders + 133670}
 							prefix={<TeamOutlined style={{ color: "#1890ff" }} />}
 							suffix={
 								<Badge
-									count={recentTraders.length}
+									count={recentTraders.length > 0 ? recentTraders.length : 0}
 									style={{ backgroundColor: "#52c41a" }}
-									title="New this month"
+									title="Recent registrations"
 								/>
 							}
 						/>
-						<Progress
-							percent={85}
-							size="small"
-							strokeColor="#1890ff"
-							format={() => "Active: 85%"}
-						/>
+						<Text type="secondary" style={{ fontSize: "12px" }}>
+							Total registered: {(totalTraders + 133670).toLocaleString()}
+						</Text>
 					</Card>
 				</Col>
 				<Col xs={24} sm={12} md={6}>
@@ -349,8 +367,8 @@ const Dashboard = () => {
 										approvalRate > 70
 											? "success"
 											: approvalRate > 50
-											? "warning"
-											: "error"
+												? "warning"
+												: "error"
 									}>
 									{Math.round(approvalRate)}% Approved
 								</Tag>
@@ -394,7 +412,9 @@ const Dashboard = () => {
 									title="Total Scheme Value"
 									value={totalSchemeAmount}
 									formatter={(value) => formatCurrency(value)}
-									prefix={<BankOutlined style={{ color: "#52c41a", fontSize: 24 }} />}
+									prefix={
+										<BankOutlined style={{ color: "#52c41a", fontSize: 24 }} />
+									}
 								/>
 							</Col>
 							<Col span={12}>
@@ -403,10 +423,10 @@ const Dashboard = () => {
 									value={
 										totalSchemes > 0
 											? totalSchemeAmount /
-											  (schemes.reduce(
+												(schemes.reduce(
 													(sum, s) => sum + (s.max_participants || 0),
 													0
-											  ) || 1)
+												) || 1)
 											: 0
 									}
 									formatter={(value) => formatCurrency(value)}
@@ -508,11 +528,18 @@ const Dashboard = () => {
 									<List.Item.Meta
 										avatar={
 											<Avatar
+												src={
+													trader.photo
+														? `data:image/jpeg;base64,${trader.photo}`
+														: null
+												}
 												style={{ backgroundColor: "#1890ff" }}
 												icon={<UserOutlined />}>
-												{`${trader.surname || ""} ${trader.other_names || ""}`
-													.charAt(0)
-													.toUpperCase()}
+												{!trader.photo &&
+													`${trader.surname || ""} ${trader.other_names || ""}`
+														.trim()
+														.charAt(0)
+														.toUpperCase()}
 											</Avatar>
 										}
 										title={
@@ -562,8 +589,8 @@ const Dashboard = () => {
 										getStatusColor(application.status) === "success"
 											? "green"
 											: getStatusColor(application.status) === "warning"
-											? "yellow"
-											: "red"
+												? "yellow"
+												: "red"
 									}
 									dot={
 										application.status === "APPROVED" ? (

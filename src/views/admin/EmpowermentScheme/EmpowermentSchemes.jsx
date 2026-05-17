@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client";
 import {
 	Table,
 	Button,
@@ -13,6 +13,7 @@ import {
 	Col,
 	Select,
 	Tooltip,
+	Popconfirm,
 	Typography
 } from "antd";
 import {
@@ -22,9 +23,11 @@ import {
 	FileTextOutlined,
 	MoreOutlined,
 	PlusOutlined,
-	ReloadOutlined
+	ReloadOutlined,
+	DeleteOutlined
 } from "@ant-design/icons";
 import { GET_EMPOWERMENT_SCHEMES } from "../../../gql/queries/empowermentSchemeQueries";
+import { DELETE_EMPOWERMENT_SCHEME } from "../../../gql/mutations/empowermentSchemeMutations";
 import { GET_LOCATIONS } from "../../../gql/queries/queries";
 import Loading from "../../../components/Loading/Loading";
 import { toast } from "react-toastify";
@@ -54,6 +57,16 @@ const EmpowermentSchemes = () => {
 	});
 
 	const { data: locationsData } = useQuery(GET_LOCATIONS);
+
+	const [deleteScheme] = useMutation(DELETE_EMPOWERMENT_SCHEME, {
+		onCompleted: () => {
+			toast.success("Empowerment scheme deleted successfully!");
+			refetchSchemes();
+		},
+		onError: (error) => {
+			toast.error(error.message || "Error deleting empowerment scheme");
+		}
+	});
 
 	const schemes = schemesData?.empowermentSchemes?.data || [];
 	const paginatorInfo = schemesData?.empowermentSchemes?.paginatorInfo;
@@ -113,16 +126,6 @@ const EmpowermentSchemes = () => {
 			}
 		];
 
-		if (record.is_open) {
-			menuItems.push({
-				key: "add-trader",
-				label: "Add Trader",
-				icon: <UserAddOutlined />,
-				onClick: () =>
-					navigate(`/admin/empowerment-schemes/${record.uuid}/add-trader`)
-			});
-		}
-
 		menuItems.push({
 			key: "applications",
 			label: "View Applications",
@@ -131,10 +134,45 @@ const EmpowermentSchemes = () => {
 				navigate(`/admin/empowerment-schemes/${record.uuid}/applications`)
 		});
 
+		const canDelete = (record.traders_count ?? 0) === 0;
+		menuItems.push({
+			key: "delete",
+			danger: canDelete,
+			disabled: !canDelete,
+			label: (
+				<Tooltip
+					title={
+						!canDelete
+							? `Cannot delete: scheme has ${record.traders_count} trader(s) attached`
+							: ""
+					}>
+					<Popconfirm
+						title="Delete empowerment scheme"
+						description="This action cannot be undone. Are you sure?"
+						okText="Yes, delete"
+						okType="danger"
+						cancelText="Cancel"
+						onConfirm={() => deleteScheme({ variables: { id: record.id } })}
+						disabled={!canDelete}
+						onClick={(e) => e.stopPropagation()}>
+						<span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+							<DeleteOutlined /> Delete Scheme
+						</span>
+					</Popconfirm>
+				</Tooltip>
+			)
+		});
+
 		return { items: menuItems };
 	};
 
 	const columns = [
+		{
+			title: "S/N",
+			key: "serial",
+			width: 60,
+			render: (_, __, index) => (currentPage - 1) * 15 + index + 1
+		},
 		{
 			title: "Scheme Name",
 			dataIndex: "name",
@@ -178,10 +216,12 @@ const EmpowermentSchemes = () => {
 			render: (_, record) => (
 				<div>
 					<div className="text-sm">
-						{record.current_participants}/{record.max_participants}
+						{record.traders_count}/{record.max_participants}
 					</div>
 					<Progress
-						percent={record.progress_percentage}
+						percent={Math.round(
+							(record.traders_count / record.max_participants) * 100
+						)}
 						size="small"
 						showInfo={false}
 					/>
@@ -321,7 +361,7 @@ const EmpowermentSchemes = () => {
 									showTotal: (total, range) =>
 										`${range[0]}-${range[1]} of ${total} items`,
 									onChange: (page) => setCurrentPage(page)
-							  }
+								}
 							: false
 					}
 					scroll={{ x: "max-content" }}

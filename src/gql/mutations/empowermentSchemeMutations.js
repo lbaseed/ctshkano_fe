@@ -103,3 +103,74 @@ export const REMOVE_TRADER_FROM_SCHEME = gql`
 		)
 	}
 `;
+
+export const BULK_ADD_TRADERS_TO_SCHEME = gql`
+	${CORE_EMPOWERMENT_SCHEME_TRADER_FIELDS}
+	${CORE_EMPOWERMENT_SCHEME_FIELDS}
+	${CORE_TRADER_FIELDS}
+	${CORE_LOCATION_FIELDS}
+	${CORE_USER_FIELDS}
+	mutation gqlBulkAddTradersToScheme(
+		$empowerment_scheme_id: ID!
+		$trader_ids: [ID!]!
+		$remarks: String
+	) {
+		bulkAddTradersToScheme(
+			input: {
+				empowerment_scheme_id: $empowerment_scheme_id
+				trader_ids: $trader_ids
+				remarks: $remarks
+			}
+		) {
+			...coreEmpowermentSchemeTraderFields
+		}
+	}
+`;
+
+export const BULK_ADD_TRADERS_BY_CTSH_IDS = gql`
+	${CORE_EMPOWERMENT_SCHEME_TRADER_FIELDS}
+	${CORE_EMPOWERMENT_SCHEME_FIELDS}
+	${CORE_TRADER_FIELDS}
+	${CORE_LOCATION_FIELDS}
+	${CORE_USER_FIELDS}
+	mutation gqlBulkAddTradersByCtshIds(
+		$empowerment_scheme_id: ID!
+		$ctsh_ids: [String!]!
+		$phone_numbers: [String]
+		$remarks: String
+	) {
+		bulkAddTradersByCtshIds(
+			input: {
+				empowerment_scheme_id: $empowerment_scheme_id
+				ctsh_ids: $ctsh_ids
+				phone_numbers: $phone_numbers
+				remarks: $remarks
+			}
+		) {
+			...coreEmpowermentSchemeTraderFields
+		}
+	}
+`;
+
+export const BULK_ADD_TRADERS_BY_TRADE_GROUP = gql`
+	${CORE_EMPOWERMENT_SCHEME_TRADER_FIELDS}
+	${CORE_EMPOWERMENT_SCHEME_FIELDS}
+	${CORE_TRADER_FIELDS}
+	${CORE_LOCATION_FIELDS}
+	${CORE_USER_FIELDS}
+	mutation gqlBulkAddTradersByTradeGroup(
+		$empowerment_scheme_id: ID!
+		$trade_id: ID!
+		$remarks: String
+	) {
+		bulkAddTradersByTradeGroup(
+			input: {
+				empowerment_scheme_id: $empowerment_scheme_id
+				trade_id: $trade_id
+				remarks: $remarks
+			}
+		) {
+			...coreEmpowermentSchemeTraderFields
+		}
+	}
+`;

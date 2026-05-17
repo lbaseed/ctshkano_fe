@@ -128,3 +128,37 @@ export const GET_TRADER_APPLICATIONS = gql`
 		}
 	}
 `;
+
+export const GET_TRADERS_NOT_IN_SCHEME = gql`
+	${CORE_TRADER_FIELDS}
+	${CORE_LOCATION_FIELDS}
+	${CORE_USER_FIELDS}
+	${CORE_PAGINATOR_INFO_FIELDS}
+	query gqlGetTradersNotInScheme(
+		$empowerment_scheme_id: ID!
+		$trade_id: ID!
+		$first: Int = 200
+		$page: Int
+	) {
+		tradersNotInScheme(
+			empowerment_scheme_id: $empowerment_scheme_id
+			trade_id: $trade_id
+			first: $first
+			page: $page
+		) {
+			data {
+				...coreTraderFields
+				trade {
+					id
+					name
+				}
+				location {
+					...coreLocationFields
+				}
+			}
+			paginatorInfo {
+				...corePaginatorInfoFields
+			}
+		}
+	}
+`;

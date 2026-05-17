@@ -180,11 +180,9 @@ const EmpowermentSchemeForm = () => {
 		// Validate required fields
 		if (
 			!formData.name ||
-			!formData.duration_months ||
 			!formData.max_participants ||
 			!formData.start_date ||
-			!formData.end_date ||
-			!formData.application_deadline
+			!formData.end_date
 		) {
 			toast.error("Please fill in all required fields");
 			return;
@@ -193,11 +191,13 @@ const EmpowermentSchemeForm = () => {
 		// Validate dates
 		const startDate = new Date(formData.start_date);
 		const endDate = new Date(formData.end_date);
-		const deadline = new Date(formData.application_deadline);
 
-		if (deadline >= startDate) {
-			toast.error("Application deadline must be before the start date");
-			return;
+		if (formData.application_deadline) {
+			const deadline = new Date(formData.application_deadline);
+			if (deadline >= startDate) {
+				toast.error("Application deadline must be before the start date");
+				return;
+			}
 		}
 
 		if (endDate.getTime() <= startDate.getTime()) {
@@ -208,12 +208,18 @@ const EmpowermentSchemeForm = () => {
 		// Prepare form data - filter out null/empty values
 		const inputData = {
 			name: formData.name,
-			duration_months: parseInt(formData.duration_months),
 			max_participants: parseInt(formData.max_participants),
 			start_date: formData.start_date,
-			end_date: formData.end_date,
-			application_deadline: formData.application_deadline
+			end_date: formData.end_date
 		};
+
+		if (formData.duration_months) {
+			inputData.duration_months = parseInt(formData.duration_months);
+		}
+
+		if (formData.application_deadline) {
+			inputData.application_deadline = formData.application_deadline;
+		}
 
 		// Add optional fields only if they have values
 		if (formData.description?.trim()) {
@@ -348,7 +354,7 @@ const EmpowermentSchemeForm = () => {
 									<div className="w-full lg:w-6/12 px-4">
 										<div className="relative w-full mb-3">
 											<label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-												Duration (Months) *
+												Duration (Months)
 											</label>
 											<input
 												type="number"
@@ -358,7 +364,6 @@ const EmpowermentSchemeForm = () => {
 												className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
 												placeholder="Enter duration in months"
 												min="1"
-												required
 											/>
 										</div>
 									</div>
@@ -457,7 +462,7 @@ const EmpowermentSchemeForm = () => {
 									<div className="w-full lg:w-4/12 px-4">
 										<div className="relative w-full mb-3">
 											<label className="block uppercase text-blueGray-600 text-xs font-bold mb-2">
-												Application Deadline *
+												Application Deadline
 											</label>
 											<input
 												type="date"
@@ -465,7 +470,6 @@ const EmpowermentSchemeForm = () => {
 												value={formData.application_deadline}
 												onChange={handleInputChange}
 												className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-												required
 											/>
 										</div>
 									</div>
@@ -740,8 +744,8 @@ const EmpowermentSchemeForm = () => {
 																? "Updating..."
 																: "Creating..."
 															: isEdit
-															? "Update Scheme"
-															: "Create Scheme"}
+																? "Update Scheme"
+																: "Create Scheme"}
 													</span>
 												</button>
 											</div>

@@ -32,6 +32,8 @@ export const CORE_USER_FIELDS = gql`
 		phone
 		clrs
 		user_type
+		is_active
+		traders_count
 		email_verified_at
 		created_at
 		updated_at
@@ -44,6 +46,8 @@ export const CORE_TRADE_FIELDS = gql`
 		uuid
 		name
 		business_nature
+		category
+		description
 		countTraders
 		options
 		created_at
@@ -65,6 +69,7 @@ export const CORE_LOCATION_FIELDS = gql`
 `;
 
 export const CORE_TRADER_FIELDS = gql`
+	${CORE_USER_FIELDS}
 	fragment coreTraderFields on Trader {
 		id
 		uuid
@@ -79,11 +84,20 @@ export const CORE_TRADER_FIELDS = gql`
 		pvc
 		nin
 		land_mark
+		lga
+		business_location
+		trade_location
 		operating_capital
 		bank_details
 		options
 		photo
-		lga
+		trade {
+			id
+			name
+		}
+		creator {
+			...coreUserFields
+		}
 		created_at
 		updated_at
 	}
@@ -113,6 +127,7 @@ export const CORE_EMPOWERMENT_SCHEME_FIELDS = gql`
 		is_open
 		available_slots
 		progress_percentage
+		traders_count
 		location {
 			...coreLocationFields
 		}
@@ -173,6 +188,44 @@ export const CORE_GUARANTOR_FIELDS = gql`
 		dob
 		nin
 		options
+		created_at
+		updated_at
+	}
+`;
+
+export const CORE_LGA_FIELDS = gql`
+	fragment coreLgaFields on Lga {
+		id
+		uuid
+		code
+		name
+		state
+		is_active
+		created_at
+		updated_at
+	}
+`;
+
+export const CORE_LGA_STATS_FIELDS = gql`
+	fragment coreLgaStatsFields on LgaStats {
+		id
+		uuid
+		code
+		name
+		state
+		is_active
+		tradersCount
+		maleTraders
+		femaleTraders
+		activeTradersCount
+		inactiveTradersCount
+		tradesCount
+		avgOperatingCapital
+		recentTradersCount
+		topTrades {
+			tradeName
+			traderCount
+		}
 		created_at
 		updated_at
 	}

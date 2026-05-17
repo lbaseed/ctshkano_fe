@@ -93,22 +93,28 @@ export default function Sidebar() {
 											{feature.title}
 										</span>
 										<ul>
-											{feature.routes.map((item) => (
-												<li className="items-center" key={item.name}>
-													<NavLink
-														onClick={() => setCollapseShow("hidden")}
-														className={({ isActive }) =>
-															isActive
-																? "bg-blueGray-200 block p-2 rounded "
-																: "" +
-																  " rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
-														}
-														to={"/admin" + item.path}>
-														{item.icon}
-														{item.name}
-													</NavLink>
-												</li>
-											))}
+											{feature.routes
+												.filter((item) => item.visible !== false)
+												.map((item) => (
+													<li className="items-center" key={item.name}>
+														<NavLink
+															onClick={() => setCollapseShow("hidden")}
+															className={({ isActive }) => {
+																const currentPath = window.location.pathname;
+																const itemPath = "/admin" + item.path;
+																const isExactMatch = currentPath === itemPath;
+
+																return isExactMatch
+																	? "bg-blueGray-200 block p-2 rounded "
+																	: "" +
+																			" rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block";
+															}}
+															to={"/admin" + item.path}>
+															{item.icon}
+															{item.name}
+														</NavLink>
+													</li>
+												))}
 										</ul>
 									</li>
 								))}
@@ -121,22 +127,28 @@ export default function Sidebar() {
 											{feature.title}
 										</span>
 										<ul>
-											{feature.routes.map((item) => (
-												<li className="items-center" key={item.name}>
-													<NavLink
-														onClick={() => setCollapseShow("hidden")}
-														className={({ isActive }) =>
-															isActive
-																? "bg-blueGray-200 block p-2 rounded "
-																: "" +
-																  " rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
-														}
-														to={"/admin" + item.path}>
-														{item.icon}
-														{item.name}
-													</NavLink>
-												</li>
-											))}
+											{feature.routes
+												.filter((item) => item.visible !== false)
+												.map((item) => (
+													<li className="items-center" key={item.name}>
+														<NavLink
+															onClick={() => setCollapseShow("hidden")}
+															className={({ isActive }) => {
+																const currentPath = window.location.pathname;
+																const itemPath = "/admin" + item.path;
+																const isExactMatch = currentPath === itemPath;
+
+																return isExactMatch
+																	? "bg-blueGray-200 block p-2 rounded "
+																	: "" +
+																			" rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block";
+															}}
+															to={"/admin" + item.path}>
+															{item.icon}
+															{item.name}
+														</NavLink>
+													</li>
+												))}
 										</ul>
 									</li>
 								))}
@@ -148,26 +160,32 @@ export default function Sidebar() {
 											{feature.title}
 										</span>
 										<ul>
-											{feature.routes.map((item) => (
-												<li className="items-center" key={item.name}>
-													<NavLink
-														onClick={() => setCollapseShow("hidden")}
-														className={({ isActive }) =>
-															isActive
-																? "bg-blueGray-200 block p-2 rounded "
-																: "" +
-																  " rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
-														}
-														to={"/admin" + item.path}>
-														{item.icon}
-														{item.name}
-													</NavLink>
-												</li>
-											))}
+											{feature.routes
+												.filter((item) => item.visible !== false)
+												.map((item) => (
+													<li className="items-center" key={item.name}>
+														<NavLink
+															onClick={() => setCollapseShow("hidden")}
+															className={({ isActive }) => {
+																const currentPath = window.location.pathname;
+																const itemPath = "/admin" + item.path;
+																const isExactMatch = currentPath === itemPath;
+
+																return isExactMatch
+																	? "bg-blueGray-200 block p-2 rounded "
+																	: "" +
+																			" rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block";
+															}}
+															to={"/admin" + item.path}>
+															{item.icon}
+															{item.name}
+														</NavLink>
+													</li>
+												))}
 										</ul>
 									</li>
 								))}
-							{user.clrs === "staff" &&
+							{user.clrs === "STAFF" &&
 								Features?.staff?.map((feature) => (
 									<li className="items-center" key={feature.title}>
 										<span className={feature.className}>
@@ -175,22 +193,61 @@ export default function Sidebar() {
 											{feature.title}
 										</span>
 										<ul>
-											{feature.routes.map((item) => (
-												<li className="items-center" key={item.name}>
-													<NavLink
-														onClick={() => setCollapseShow("hidden")}
-														className={({ isActive }) =>
-															isActive
-																? "bg-blueGray-200 block p-2 rounded "
-																: "" +
-																  " rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
-														}
-														to={"/admin" + item.path}>
-														{item.icon}
-														{item.name}
-													</NavLink>
-												</li>
-											))}
+											{feature.routes
+												.filter((item) => item.visible !== false)
+												.map((item) => (
+													<li className="items-center" key={item.name}>
+														<NavLink
+															onClick={() => setCollapseShow("hidden")}
+															className={({ isActive }) => {
+																const currentPath = window.location.pathname;
+																const itemPath = "/admin" + item.path;
+																const isExactMatch = currentPath === itemPath;
+
+																return isExactMatch
+																	? "bg-blueGray-200 block p-2 rounded "
+																	: "" +
+																			" rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block";
+															}}
+															to={"/admin" + item.path}>
+															{item.icon}
+															{item.name}
+														</NavLink>
+													</li>
+												))}
+										</ul>
+									</li>
+								))}
+							{user.clrs === "SCHEME_VIEWER" &&
+								Features?.scheme_viewer?.map((feature) => (
+									<li className="items-center" key={feature.title}>
+										<span className={feature.className}>
+											{feature.icon}
+											{feature.title}
+										</span>
+										<ul>
+											{feature.routes
+												.filter((item) => item.visible !== false)
+												.map((item) => (
+													<li className="items-center" key={item.name}>
+														<NavLink
+															onClick={() => setCollapseShow("hidden")}
+															className={({ isActive }) => {
+																const currentPath = window.location.pathname;
+																const itemPath = "/admin" + item.path;
+																const isExactMatch = currentPath === itemPath;
+
+																return isExactMatch
+																	? "bg-blueGray-200 block p-2 rounded "
+																	: "" +
+																			" rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block";
+															}}
+															to={"/admin" + item.path}>
+															{item.icon}
+															{item.name}
+														</NavLink>
+													</li>
+												))}
 										</ul>
 									</li>
 								))}
@@ -212,7 +269,7 @@ export default function Sidebar() {
 										isActive
 											? "bg-blueGray-200 block p-2 rounded"
 											: "" +
-											  " rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
+												" rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
 									}
 									to="/admin/profile">
 									<i className="fas fa-user-circle text-blueGray-400 mr-2 text-sm"></i>{" "}
@@ -227,7 +284,7 @@ export default function Sidebar() {
 										isActive
 											? "bg-blueGray-200 block p-2 rounded "
 											: "" +
-											  " rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
+												" rounded p-2 text-blueGray-700 hover:text-blueGray-500 text-xs uppercase py-3 font-bold block"
 									}
 									to="/admin/logout">
 									<i className="fas fa-solid fa-arrow-right-from-bracket text-blueGray-400 mr-2 text-sm"></i>{" "}

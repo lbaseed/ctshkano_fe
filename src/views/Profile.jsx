@@ -5,25 +5,65 @@ import context from "../context/context";
 import CardProfileTabs from "../components/Cards/CardProfileTabs";
 import { ToastContainer, toast } from "react-toastify";
 import Loading from "../components/Loading/Loading";
-import CustomModal from "../components/Modals/CustomModal";
-import Select from "react-select";
+import {
+	Card,
+	Avatar,
+	Button,
+	Modal,
+	Form,
+	Input,
+	Select,
+	Space,
+	Typography,
+	Row,
+	Col,
+	Upload,
+	Badge,
+	Divider,
+	Tooltip,
+	Tag
+} from "antd";
+import {
+	UserOutlined,
+	CameraOutlined,
+	MailOutlined,
+	PhoneOutlined,
+	PlusOutlined,
+	EditOutlined,
+	BankOutlined,
+	TeamOutlined
+} from "@ant-design/icons";
 import { GET_USERS } from "../gql/queries/queries";
 import { useMutation, useQuery } from "@apollo/client";
-import { CREATE_USER, UPDATE_USER_AVATAR } from "../gql/mutations/mutations";
+import {
+	CREATE_USER,
+	UPDATE_USER,
+	DELETE_USER,
+	UPDATE_USER_AVATAR
+} from "../gql/mutations/mutations";
 import { LOADING } from "../reducer/reducer-types";
+
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 const Profile = () => {
 	const { state, dispatch } = useContext(context);
 	const [cookies, setCookie] = useCookies(["ctshkano"]);
-	const [showCreateModal, setShowCreateModal] = useState(false);
+	const [showEditModal, setShowEditModal] = useState(false);
+	const [editingUser, setEditingUser] = useState(null);
 
 	const [staff, setStaff] = useState([]);
-	const [fullname, setFullname] = useState("");
-	const [email, setEmail] = useState("");
-	const [clrs, setClrs] = useState("");
-	const [password, setPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
-	const [phone, setPhone] = useState("");
+
+	// Edit form states
+	const [editFullname, setEditFullname] = useState("");
+	const [editEmail, setEditEmail] = useState("");
+	const [editClrs, setEditClrs] = useState("");
+	const [editPhone, setEditPhone] = useState("");
+
+	// Self-edit profile states
+	const [showSelfEditModal, setShowSelfEditModal] = useState(false);
+	const [selfEditName, setSelfEditName] = useState("");
+	const [selfEditPhone, setSelfEditPhone] = useState("");
 
 	const user = cookies?.ctshkano && cookies?.ctshkano?.user;
 	let ctshkanoCookie = cookies?.ctshkano;
@@ -40,11 +80,21 @@ const Profile = () => {
 		refetchQueries: [{ query: GET_USERS }]
 	});
 
+	const [updateUser] = useMutation(UPDATE_USER, {
+		refetchQueries: [{ query: GET_USERS }]
+	});
+
+	const [deleteUser] = useMutation(DELETE_USER, {
+		refetchQueries: [{ query: GET_USERS }]
+	});
+
 	const [performUpload] = useMutation(UPDATE_USER_AVATAR);
 
 	useEffect(() => {
-		setStaff(staffData?.myStaff);
-	}, [staffLoading]);
+		if (staffData?.myStaff) {
+			setStaff(staffData.myStaff);
+		}
+	}, [staffData, staffLoading]);
 
 	let options = [
 		{ value: "", label: "Select" },
@@ -54,44 +104,148 @@ const Profile = () => {
 		{ value: "Senior_Manager", label: "Senior Manager" }
 	];
 
-	const handleCreateUser = async (e) => {
-		e.preventDefault();
+	const handleCreateUser = async (values) => {
+		const { fullname, email, password, confirmPassword, clrs, phone } = values;
 
-		if (!fullname || !email || !password || !confirmPassword || !clrs)
-			return toast.error("Please all required Fields");
-
-		if (password !== confirmPassword) return toast.error("Password Mismatched");
-
-		const variables = {
-			name: fullname,
-			email,
-			password,
-			confirmPassword,
-			clrs,
-			phone
-		};
+		if (password !== confirmPassword) {
+			return toast.error("Password Mismatched");
+		}
 
 		try {
 			dispatch({ type: LOADING, payload: true });
 
-			const result = await createUser({ variables });
+			const result = await createUser({
+				variables: {
+					name: fullname,
+					email,
+					password,
+					confirmPassword,
+					clrs,
+					phone
+				}
+			});
 
 			if (result.data) {
 				setStaff((current) => [...current, result.data.createUser]);
-				toast.success("Staff Acount Created Successfullly");
+				toast.success("Staff Account Created Successfully!");
 				setShowCreateModal(false);
+				// Clear form
+				setFullname("");
+				setEmail("");
+				setPassword("");
+				setPhone("");
+				setConfirmPassword("");
+				setClrs("");
 			}
-			setShowCreateModal(false);
-			dispatch({ type: LOADING, payload: false });
-			setFullname("");
-			setEmail("");
-			setPassword("");
-			setPhone("");
-			setConfirmPassword("");
 		} catch (error) {
+			toast.error(error.message || "Failed to create user");
+		} finally {
 			dispatch({ type: LOADING, payload: false });
-			toast.error(error);
-			setShowCreateModal(false);
+		}
+	};
+
+	const handleEditUser = async (values) => {
+		const { fullname, email, clrs, phone } = values;
+
+		try {
+			dispatch({ type: LOADING, payload: true });
+
+			const result = await updateUser({
+				variables: {
+					uuid: editingUser.uuid,
+					name: fullname,
+					email,
+					clrs,
+					phone
+				}
+			});
+
+			if (result.data) {
+				setStaff((current) =>
+					current.map((staffMember) =>
+						staffMember.uuid === editingUser.uuid
+							? { ...staffMember, ...result.data.updateUser }
+							: staffMember
+					)
+				);
+				toast.success("Staff Member Updated Successfully!");
+				setShowEditModal(false);
+				setEditingUser(null);
+			}
+		} catch (error) {
+			toast.error(error.message || "Failed to update user");
+		} finally {
+			dispatch({ type: LOADING, payload: false });
+		}
+	};
+
+	const openEditModal = (staffMember) => {
+		setEditingUser(staffMember);
+		setEditFullname(staffMember.name || "");
+		setEditEmail(staffMember.email || "");
+		setEditClrs(staffMember.clrs || "");
+		setEditPhone(staffMember.phone || "");
+		setShowEditModal(true);
+	};
+
+	const closeEditModal = () => {
+		setShowEditModal(false);
+		setEditingUser(null);
+		setEditFullname("");
+		setEditEmail("");
+		setEditClrs("");
+		setEditPhone("");
+	};
+
+	const openSelfEditModal = () => {
+		setSelfEditName(user?.name || "");
+		setSelfEditPhone(user?.phone || "");
+		setShowSelfEditModal(true);
+	};
+
+	const handleSelfEditSubmit = async (values) => {
+		try {
+			dispatch({ type: LOADING, payload: true });
+			const result = await updateUser({
+				variables: {
+					uuid: user.uuid,
+					name: values.selfName,
+					phone: values.selfPhone,
+					email: user.email,
+					clrs: user.clrs
+				}
+			});
+			if (result.data) {
+				toast.success("Profile updated successfully!");
+				setShowSelfEditModal(false);
+			}
+		} catch (error) {
+			toast.error(error.message || "Failed to update profile");
+		} finally {
+			dispatch({ type: LOADING, payload: false });
+		}
+	};
+
+	const handleDeleteUser = async (staffMember) => {
+		try {
+			dispatch({ type: LOADING, payload: true });
+
+			const result = await deleteUser({
+				variables: {
+					uuid: staffMember.uuid
+				}
+			});
+
+			if (result.data) {
+				setStaff((current) =>
+					current.filter((member) => member.uuid !== staffMember.uuid)
+				);
+				toast.success("Staff Member Deleted Successfully!");
+			}
+		} catch (error) {
+			toast.error(error.message || "Failed to delete user");
+		} finally {
+			dispatch({ type: LOADING, payload: false });
 		}
 	};
 
@@ -137,263 +291,263 @@ const Profile = () => {
 	};
 
 	return (
-		<>
+		<div className="min-h-screen bg-gray-50 p-4">
 			<ToastContainer />
 			{state.loading && <Loading />}
-			{showCreateModal && (
-				<CustomModal
-					title="Add New User"
-					confirm={handleCreateUser}
-					okText="Create"
-					cancel={() => setShowCreateModal(false)}>
-					<>
-						<h6 className="text-blueGray-400 text-sm mt-3 mb-6 font-bold uppercase">
-							Add New User
-						</h6>
-						<div className="flex flex-wrap">
-							<div className="w-full lg:w-6/12 px-4">
-								<div className="relative w-full mb-3">
-									<label
-										id="item-name"
-										className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-										htmlFor="grid-password">
-										Full Name *
-									</label>
-									<input
-										id="full-name-value"
-										type="text"
-										className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-										placeholder="abc..."
-										value={fullname}
-										onChange={(e) => setFullname(e.target.value)}
-									/>
-								</div>
 
-								<div className="relative w-full mb-3">
-									<label
-										id="email"
-										className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-										htmlFor="email">
-										Email *
-									</label>
-									<input
-										id="item-cost-value"
-										type="email"
-										className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-										placeholder="abc..."
-										value={email}
-										onChange={(e) => setEmail(e.target.value)}
-									/>
-								</div>
+			{/* Edit My Profile Modal */}
+			<Modal
+				title={
+					<Space>
+						<EditOutlined />
+						<span>Edit My Profile</span>
+					</Space>
+				}
+				open={showSelfEditModal}
+				onCancel={() => setShowSelfEditModal(false)}
+				footer={null}
+				width={480}>
+				<Form
+					layout="vertical"
+					onFinish={handleSelfEditSubmit}
+					initialValues={{ selfName: selfEditName, selfPhone: selfEditPhone }}
+					key={showSelfEditModal ? "open" : "closed"}>
+					<Form.Item
+						label="Full Name"
+						name="selfName"
+						rules={[{ required: true, message: "Please enter your name!" }]}>
+						<Input prefix={<UserOutlined />} placeholder="Enter full name" />
+					</Form.Item>
+					<Form.Item label="Phone Number" name="selfPhone">
+						<Input
+							prefix={<PhoneOutlined />}
+							placeholder="Enter phone number"
+						/>
+					</Form.Item>
+					<Form.Item>
+						<Space style={{ width: "100%", justifyContent: "flex-end" }}>
+							<Button onClick={() => setShowSelfEditModal(false)}>
+								Cancel
+							</Button>
+							<Button type="primary" htmlType="submit" loading={state.loading}>
+								Save Changes
+							</Button>
+						</Space>
+					</Form.Item>
+				</Form>
+			</Modal>
 
-								<div className="relative w-full mb-3">
-									<label
-										id="email"
-										className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-										htmlFor="passwor">
-										Password *
-									</label>
-									<input
-										id="item-cost-value"
-										type="password"
-										className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-										placeholder="abc..."
-										value={password}
-										onChange={(e) => setPassword(e.target.value)}
-									/>
-								</div>
+			{/* Edit Staff Modal */}
+			<Modal
+				title={
+					<Space>
+						<EditOutlined />
+						<span>Edit Staff Member</span>
+					</Space>
+				}
+				open={showEditModal}
+				onCancel={closeEditModal}
+				footer={null}
+				width={600}>
+				<Form
+					layout="vertical"
+					onFinish={handleEditUser}
+					initialValues={{
+						fullname: editFullname,
+						email: editEmail,
+						clrs: editClrs,
+						phone: editPhone
+					}}>
+					<Row gutter={16}>
+						<Col span={12}>
+							<Form.Item
+								label="Full Name"
+								name="fullname"
+								rules={[
+									{ required: true, message: "Please input full name!" }
+								]}>
+								<Input
+									prefix={<UserOutlined />}
+									placeholder="Enter full name"
+									value={editFullname}
+									onChange={(e) => setEditFullname(e.target.value)}
+								/>
+							</Form.Item>
+						</Col>
+						<Col span={12}>
+							<Form.Item
+								label="Email"
+								name="email"
+								rules={[
+									{
+										required: true,
+										type: "email",
+										message: "Please input valid email!"
+									}
+								]}>
+								<Input
+									prefix={<MailOutlined />}
+									placeholder="Enter email address"
+									value={editEmail}
+									onChange={(e) => setEditEmail(e.target.value)}
+								/>
+							</Form.Item>
+						</Col>
+					</Row>
 
-								<div className="relative w-full mb-3">
-									<label
-										id="email"
-										className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-										htmlFor="conf_password">
-										Confirm Password *
-									</label>
-									<input
-										id="item-cost-value"
-										type="password"
-										className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-										placeholder="abc..."
-										value={confirmPassword}
-										onChange={(e) => setConfirmPassword(e.target.value)}
-									/>
-								</div>
+					<Row gutter={16}>
+						<Col span={12}>
+							<Form.Item label="Phone Number" name="phone">
+								<Input
+									prefix={<PhoneOutlined />}
+									placeholder="Enter phone number"
+									value={editPhone}
+									onChange={(e) => setEditPhone(e.target.value)}
+								/>
+							</Form.Item>
+						</Col>
+						<Col span={12}>
+							<Form.Item
+								label="Clearance Level"
+								name="clrs"
+								rules={[
+									{ required: true, message: "Please select clearance level!" }
+								]}>
+								<Select
+									placeholder="Select clearance level"
+									value={editClrs}
+									onChange={(value) => setEditClrs(value)}>
+									<Option value="Sales">Sales</Option>
+									<Option value="Sales_Manager">Sales Manager</Option>
+									<Option value="Stock_Manager">Stock Manager</Option>
+									<Option value="Senior_Manager">Senior Manager</Option>
+								</Select>
+							</Form.Item>
+						</Col>
+					</Row>
 
-								<div className="relative w-full mb-3">
-									<label
-										id="email"
-										className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-										htmlFor="conf_password">
-										Phone Number
-									</label>
-									<input
-										id="item-cost-value"
-										type="text"
-										className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-										placeholder="abc..."
-										value={phone}
-										onChange={(e) => setPhone(e.target.value)}
-									/>
-								</div>
+					<Form.Item>
+						<Space style={{ width: "100%", justifyContent: "flex-end" }}>
+							<Button onClick={closeEditModal}>Cancel</Button>
+							<Button type="primary" htmlType="submit" loading={state.loading}>
+								Update Staff
+							</Button>
+						</Space>
+					</Form.Item>
+				</Form>
+			</Modal>
 
-								<div className="relative w-full mb-3">
-									<label
-										id="item-group"
-										className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-										htmlFor="grid-password">
-										Clearance Level *
-									</label>
-									<Select
-										name="group"
-										options={options}
-										onChange={(value) => setClrs(value.value)}
-									/>
-								</div>
+			{/* Main Profile Card */}
+			<Card
+				className="max-w-6xl mx-auto"
+				style={{ borderRadius: "16px", padding: "20px" }}
+				bodyStyle={{ padding: 0 }}>
+				{/* Cover Image Section */}
+				<div className="relative h-48 md:h-64 bg-gradient-to-r from-blue-500 to-purple-600 rounded-t-2xl">
+					<div className="absolute inset-0 bg-black bg-opacity-20 rounded-t-2xl" />
+					<div className="absolute bottom-4 left-6 text-white">
+						<Title level={2} style={{ color: "white", margin: 0 }}>
+							User Profile
+						</Title>
+						<Text style={{ color: "rgba(255,255,255,0.8)" }}>
+							Manage your account settings and team
+						</Text>
+					</div>
+				</div>
+
+				{/* Profile Header */}
+				<div className="relative px-6 pb-6">
+					<div className="flex flex-col md:flex-row items-start md:items-end -mt-16 md:-mt-12">
+						{/* Avatar Section */}
+						<div className="relative mb-4 md:mb-0 md:mr-12 lg:mr-16">
+							<Badge
+								count={
+									<Tooltip title="Change Profile Picture">
+										<Button
+											type="primary"
+											shape="circle"
+											icon={<CameraOutlined />}
+											size="small"
+											onClick={() =>
+												document.getElementById("avatar-upload").click()
+											}
+										/>
+									</Tooltip>
+								}
+								offset={[-10, 120]}>
+								<Avatar
+									size={128}
+									src={file}
+									icon={<UserOutlined />}
+									className="border-4 border-white shadow-lg"
+								/>
+							</Badge>
+							<input
+								id="avatar-upload"
+								type="file"
+								accept="image/*"
+								onChange={handleImageChange}
+								style={{ display: "none" }}
+							/>
+						</div>
+
+						{/* User Info */}
+						<div className="flex-1 ml-3 text-center md:text-left">
+							<Title level={3} style={{ margin: "0 0 8px 0" }}>
+								{user?.name}
+							</Title>
+							<Space direction="vertical" size={4}>
+								<Space>
+									<MailOutlined className="text-gray-500" />
+									<Text type="secondary">{user?.email}</Text>
+								</Space>
+								{user?.phone && (
+									<Space>
+										<PhoneOutlined className="text-gray-500" />
+										<Text type="secondary">{user?.phone}</Text>
+									</Space>
+								)}
+								<Space>
+									<BankOutlined className="text-gray-500" />
+									<Text type="secondary">
+										{user?.business?.name || "CTSH Kano"}
+									</Text>
+								</Space>
+							</Space>
+							<div className="mt-3">
+								<Tag color="blue" className="px-3 py-1">
+									{user?.clrs || "Staff"}
+								</Tag>
 							</div>
 						</div>
-					</>
-				</CustomModal>
-			)}
-			<main className="profile-page">
-				<section className="relative block h-500-px">
-					<div
-						className="absolute top-0 w-full h-full bg-center bg-cover"
-						style={{
-							backgroundImage:
-								"url('https://images.unsplash.com/photo-1499336315816-097655dcfbda?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2710&q=80')"
-						}}>
-						<span
-							id="blackOverlay"
-							className="w-full h-full absolute opacity-50 bg-black"></span>
-					</div>
-					<div
-						className="top-auto bottom-0 left-0 right-0 w-full absolute pointer-events-none overflow-hidden h-70-px"
-						style={{ transform: "translateZ(0)" }}>
-						<svg
-							className="absolute bottom-0 overflow-hidden"
-							xmlns="http://www.w3.org/2000/svg"
-							preserveAspectRatio="none"
-							version="1.1"
-							viewBox="0 0 2560 100"
-							x="0"
-							y="0">
-							<polygon
-								className="text-blueGray-200 fill-current"
-								points="2560 0 2560 100 0 100"></polygon>
-						</svg>
-					</div>
-				</section>
-				<section className="relative py-16 bg-blueGray-200">
-					<div className="container mx-auto px-4">
-						<div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-xl rounded-lg -mt-64">
-							<div className="px-6">
-								<div className="flex flex-wrap justify-center">
-									<div className="w-full lg:w-3/12 px-4 lg:order-2 flex justify-center">
-										<div className="relative">
-											<img
-												alt="..."
-												src={file}
-												className="shadow-2xl rounded-full h-auto align-middle border-none absolute -m-16 -ml-20 lg:-ml-16 max-w-150-px"
-												style={{ width: "150px", height: "150px" }}
-											/>
-											<label
-												className="absolute bottom-0 right-0 rounded-full bg-emerald-400 items-center justify-center text-center text-white p-3"
-												style={{
-													width: "50px",
-													height: "50px",
-													border: "0px solid #000",
-													marginRight: "0px"
-												}}>
-												<input
-													className=" "
-													type="file"
-													accept="image/*"
-													required
-													onChange={handleImageChange}
-													style={{
-														display: "none",
-														border: "1px solid #000",
-														width: "100px",
-														height: "40px",
-														textDecoration: "none"
-													}}
-												/>
-												<i className="fa fa-pencil"></i>
-											</label>
-										</div>
-									</div>
-									<div className="w-full lg:w-4/12 px-4 lg:order-3 lg:text-right lg:self-center">
-										<div className="py-6 px-3 mt-32 sm:mt-0">
-											{user.clrs === "Owner" && (
-												<button
-													onClick={() => setShowCreateModal(true)}
-													className="bg-lightBlue-500 active:bg-lightBlue-600 uppercase text-white font-bold hover:shadow-md shadow text-xs px-4 py-2 rounded outline-none focus:outline-none sm:mr-2 mb-1 ease-linear transition-all duration-150"
-													type="button">
-													Create Staff
-												</button>
-											)}
-										</div>
-									</div>
-									{/* <div className="w-full lg:w-4/12 px-4 lg:order-1">
-										<div className="flex justify-center py-4 lg:pt-4 pt-8">
-											<div className="mr-4 p-3 text-center">
-												<span className="text-xl font-bold block uppercase tracking-wide text-blueGray-600">
-													22
-												</span>
-												<span className="text-sm text-blueGray-400">
-													Friends
-												</span>
-											</div>
-											<div className="mr-4 p-3 text-center">
-												<span className="text-xl font-bold block uppercase tracking-wide text-blueGray-600">
-													10
-												</span>
-												<span className="text-sm text-blueGray-400">
-													Photos
-												</span>
-											</div>
-											<div className="lg:mr-4 p-3 text-center">
-												<span className="text-xl font-bold block uppercase tracking-wide text-blueGray-600">
-													89
-												</span>
-												<span className="text-sm text-blueGray-400">
-													Comments
-												</span>
-											</div>
-										</div>
-									</div> */}
-								</div>
 
-								<div className="mt-8">
-									<CardProfileTabs user={user} staff={staff} />
-								</div>
-
-								<div className="mt-10 py-10 border-t border-blueGray-200 text-center">
-									<div className="flex flex-wrap justify-center">
-										{/* <div className="w-full lg:w-9/12 px-4">
-											<p className="mb-4 text-lg leading-relaxed text-blueGray-700">
-												An artist of considerable range, Jenna the name taken by
-												Melbourne-raised, Brooklyn-based Nick Murphy writes,
-												performs and records all of his own music, giving it a
-												warm, intimate feel with a solid groove structure. An
-												artist of considerable range.
-											</p>
-											<a
-												href="#pablo"
-												className="font-normal text-lightBlue-500"
-												onClick={(e) => e.preventDefault()}>
-												Show more
-											</a>
-										</div> */}
-									</div>
-								</div>
-							</div>
+						{/* Action Buttons */}
+						<div className="flex flex-col space-y-2 md:space-y-0 md:space-x-2 md:flex-row mt-4 md:mt-0">
+							<Button
+								icon={<EditOutlined />}
+								className="rounded-lg"
+								onClick={openSelfEditModal}>
+								Edit Profile
+							</Button>
 						</div>
 					</div>
-				</section>
-			</main>
-		</>
+				</div>
+
+				<Divider style={{ margin: "0 0 24px 0" }} />
+
+				{/* Profile Content */}
+				<div className="px-6 pb-6">
+					<CardProfileTabs
+						user={user}
+						staff={staff}
+						onEditUser={openEditModal}
+						onDeleteUser={handleDeleteUser}
+						onCreateUser={handleCreateUser}
+						loading={state.loading}
+					/>
+				</div>
+			</Card>
+		</div>
 	);
 };
 

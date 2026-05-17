@@ -59,7 +59,9 @@ const Admin = () => {
 
 				<div className="px-4 md:px-10 mx-auto w-full">
 					<Routes>
-						<Route path="/dashboard" exact element={<Dashboard />} />
+						{user.clrs !== "SCHEME_VIEWER" && (
+							<Route path="/dashboard" exact element={<Dashboard />} />
+						)}
 						<Route path="/profile" exact element={<Profile />} />
 						<Route path="/trader" exact element={<Trader />} />
 
@@ -87,8 +89,25 @@ const Admin = () => {
 									<Route path={path} element={element} />
 								))
 							)}
+						{user.clrs === "SCHEME_VIEWER" &&
+							Features?.scheme_viewer?.map(({ routes }) =>
+								routes.map(({ path, element }) => (
+									<Route path={path} element={element} />
+								))
+							)}
 
-						<Route path="/*" element={<Navigate to={"/admin/dashboard"} />} />
+						<Route
+							path="/*"
+							element={
+								<Navigate
+									to={
+										user.clrs === "SCHEME_VIEWER"
+											? "/admin/scheme-viewer"
+											: "/admin/dashboard"
+									}
+								/>
+							}
+						/>
 						<Route path="/logout" exact Component={handleLogout} />
 					</Routes>
 

@@ -9,8 +9,6 @@ import { CookiesProvider } from "react-cookie";
 import { ApolloLink } from "@apollo/client/link/core";
 import { setContext } from "@apollo/client/link/context";
 // import { createHttpLink } from "@apollo/client/link/http";
-import { PrimeReactProvider } from "primereact/api";
-import Tailwind from "primereact/passthrough/tailwind";
 import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import "primereact/resources/themes/lara-light-cyan/theme.css";
 import "react-toastify/dist/ReactToastify.css";

@@ -8,7 +8,9 @@ import {
 	CORE_GUARANTOR_FIELDS,
 	CORE_NEXTOFKIN_FIELDS,
 	CORE_EMPOWERMENT_SCHEME_FIELDS,
-	CORE_EMPOWERMENT_SCHEME_TRADER_FIELDS
+	CORE_EMPOWERMENT_SCHEME_TRADER_FIELDS,
+	CORE_LGA_FIELDS,
+	CORE_LGA_STATS_FIELDS
 } from "../fragments";
 
 export const GET_TRADES = gql`
@@ -99,6 +101,7 @@ export const GET_TRADER = gql`
 	${CORE_LOCATION_FIELDS}
 	${CORE_NEXTOFKIN_FIELDS}
 	${CORE_TRADE_FIELDS}
+	${CORE_LGA_FIELDS}
 	query gqlGetTrader($uuid: ID!) {
 		trader(uuid: $uuid) {
 			...coreTraderFields
@@ -113,6 +116,9 @@ export const GET_TRADER = gql`
 			}
 			nextOfKin {
 				...coreNextofkinFields
+			}
+			lgaRelation {
+				...coreLgaFields
 			}
 		}
 	}
@@ -134,6 +140,9 @@ export const GET_TRADERS_LIST = gql`
 	${CORE_LOCATION_FIELDS}
 	query gqlGetTradersList(
 		$trade_id: ID
+		$search: String
+		$date_from: String
+		$date_to: String
 		$first: Int!
 		$page: Int
 		$orderBy: QueryTraderListOrderByColumn!
@@ -141,9 +150,44 @@ export const GET_TRADERS_LIST = gql`
 	) {
 		traderList(
 			trade_id: $trade_id
+			search: $search
+			date_from: $date_from
+			date_to: $date_to
 			first: $first
 			page: $page
 			orderBy: { column: $orderBy, order: $direction }
+		) {
+			data {
+				...coreTraderFields
+				trade {
+					...coreTradeFields
+				}
+				location {
+					...coreLocationFields
+				}
+			}
+			paginatorInfo {
+				...corePaginatorInfoFields
+			}
+		}
+	}
+`;
+
+export const GET_TRADERS_BY_TRADE_LOCATION = gql`
+	${CORE_TRADER_FIELDS}
+	${CORE_PAGINATOR_INFO_FIELDS}
+	${CORE_TRADE_FIELDS}
+	${CORE_LOCATION_FIELDS}
+	query gqlGetTradersByTradeLocation(
+		$trade_location: String!
+		$first: Int!
+		$page: Int
+	) {
+		traderList(
+			trade_location: $trade_location
+			first: $first
+			page: $page
+			orderBy: { column: SURNAME, order: ASC }
 		) {
 			data {
 				...coreTraderFields
@@ -166,6 +210,17 @@ export const GET_USERS = gql`
 	query gqlGetUsers {
 		myStaff {
 			...coreUserFields
+		}
+	}
+`;
+
+export const GET_ALL_USERS = gql`
+	${CORE_USER_FIELDS}
+	query gqlGetAllUsers {
+		users {
+			data {
+				...coreUserFields
+			}
 		}
 	}
 `;
@@ -255,6 +310,90 @@ export const GET_OPEN_EMPOWERMENT_SCHEMES = gql`
 			paginatorInfo {
 				...corePaginatorInfoFields
 			}
+		}
+	}
+`;
+
+export const GET_DASHBOARD_METRICS = gql`
+	${CORE_TRADER_FIELDS}
+	${CORE_TRADE_FIELDS}
+	query gqlGetDashboardMetrics {
+		dashboardMetrics {
+			totalTraders
+			totalTrades
+			totalLocations
+			totalMaleTraders
+			totalFemaleTraders
+			tradersWithBankDetails
+			tradersWithPhotos
+			recentTradersCount
+			tradersPerTrade {
+				tradeId
+				tradeName
+				count
+			}
+			tradersPerLocation {
+				locationId
+				locationName
+				count
+			}
+			monthlyRegistrations {
+				month
+				year
+				count
+			}
+		}
+		recentTraders: recentTraders(limit: 5) {
+			...coreTraderFields
+			trade {
+				...coreTradeFields
+			}
+		}
+	}
+`;
+
+export const GET_LGA_MANAGEMENT_DATA = gql`
+	${CORE_LGA_STATS_FIELDS}
+	query gqlGetLgaManagementData {
+		lgaManagementData {
+			totalLgas
+			totalActiveTraders
+			totalInactiveTraders
+			avgTradersPerLga
+			lgaStats {
+				...coreLgaStatsFields
+			}
+		}
+	}
+`;
+
+export const GET_LGAS = gql`
+	${CORE_LGA_FIELDS}
+	query gqlGetLgas {
+		lgas {
+			...coreLgaFields
+		}
+	}
+`;
+
+// User activation mutations
+export const TOGGLE_USER_ACTIVATION = gql`
+	${CORE_USER_FIELDS}
+	mutation gqlToggleUserActivation($uuid: ID!) {
+		toggleUserActivation(uuid: $uuid) {
+			...coreUserFields
+		}
+	}
+`;
+
+export const BULK_TOGGLE_USER_ACTIVATION = gql`
+	mutation gqlBulkToggleUserActivation($uuids: [ID!]!, $is_active: Boolean!) {
+		bulkToggleUserActivation(uuids: $uuids, is_active: $is_active) {
+			success
+			message
+			affected_count
+			failed_count
+			errors
 		}
 	}
 `;
