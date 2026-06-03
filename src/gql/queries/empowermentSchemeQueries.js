@@ -83,12 +83,14 @@ export const GET_EMPOWERMENT_SCHEME_APPLICATIONS = gql`
 		$status: EmpowermentSchemeTraderStatus
 		$first: Int = 15
 		$page: Int
+		$orderBy: [OrderByClause!]
 	) {
 		empowermentSchemeApplications(
 			empowerment_scheme_id: $empowerment_scheme_id
 			status: $status
 			first: $first
 			page: $page
+			orderBy: $orderBy
 		) {
 			data {
 				...coreEmpowermentSchemeTraderFields

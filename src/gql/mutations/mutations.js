@@ -601,3 +601,12 @@ export const UPLOAD_TRADER_PHOTO = gql`
 		}
 	}
 `;
+
+export const REMOVE_TRADER_PHOTO = gql`
+	${CORE_TRADER_FIELDS}
+	mutation gqlRemoveTraderPhoto($trader_uuid: ID!) {
+		removeTraderPhoto(trader_uuid: $trader_uuid) {
+			...coreTraderFields
+		}
+	}
+`;

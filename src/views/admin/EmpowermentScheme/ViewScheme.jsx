@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useMutation, useQuery } from "@apollo/client";
 import { useCookies } from "react-cookie";
 import { pdf } from "@react-pdf/renderer";
@@ -14,6 +14,7 @@ import {
 	Typography,
 	Row,
 	Col,
+	Flex,
 	Statistic,
 	Avatar,
 	Badge,
@@ -169,6 +170,7 @@ const ViewScheme = () => {
 	const [addMode, setAddMode] = useState("individual"); // "individual" | "trade"
 	const [selectedTradeId, setSelectedTradeId] = useState(null);
 	const [addProgress, setAddProgress] = useState(null); // { done, total } | null
+	const [lightboxImage, setLightboxImage] = useState(null); // base64 string | null
 
 	// GraphQL operations
 	const { data: schemesData, loading: schemesLoading } = useQuery(
@@ -261,10 +263,24 @@ const ViewScheme = () => {
 	} = useQuery(GET_EMPOWERMENT_SCHEME_APPLICATIONS, {
 		variables: {
 			empowerment_scheme_id: scheme?.id,
-			first: 500
+			first: 500,
+			orderBy: [{ column: "UPDATED_AT", order: "DESC" }]
 		},
 		skip: !scheme?.id
 	});
+
+	// Auto-refetch all participants when the initial page doesn't cover the full total
+	useEffect(() => {
+		const info = applicationsData?.empowermentSchemeApplications?.paginatorInfo;
+		const loaded =
+			applicationsData?.empowermentSchemeApplications?.data?.length ?? 0;
+		if (info?.total && info.total > loaded) {
+			refetchApplications({
+				empowerment_scheme_id: scheme?.id,
+				first: info.total
+			});
+		}
+	}, [applicationsData]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Initialize selected scheme if uuid provided
 	useEffect(() => {
@@ -685,35 +701,37 @@ const ViewScheme = () => {
 	// Filtered participants list
 	const allApplications =
 		applicationsData?.empowermentSchemeApplications?.data || [];
-	const filteredParticipants = allApplications.filter((record) => {
-		if (
-			participantLocationFilter &&
-			record.trader?.trade_location !== participantLocationFilter
-		) {
-			return false;
-		}
-		if (
-			participantTradeFilter &&
-			record.trader?.trade?.name !== participantTradeFilter
-		) {
-			return false;
-		}
-		if (participantSearch.trim()) {
-			const name =
-				`${record.trader?.surname || ""} ${record.trader?.other_names || ""}`.toLowerCase();
-			const phone = (record.trader?.phone || "").toLowerCase();
-			const ctshId = (record.trader?.ctsh_id || "").toLowerCase();
-			const term = participantSearch.trim().toLowerCase();
+	const filteredParticipants = allApplications
+		.filter((record) => {
 			if (
-				!name.includes(term) &&
-				!phone.includes(term) &&
-				!ctshId.includes(term)
+				participantLocationFilter &&
+				record.trader?.trade_location !== participantLocationFilter
 			) {
 				return false;
 			}
-		}
-		return true;
-	});
+			if (
+				participantTradeFilter &&
+				record.trader?.trade?.name !== participantTradeFilter
+			) {
+				return false;
+			}
+			if (participantSearch.trim()) {
+				const name =
+					`${record.trader?.surname || ""} ${record.trader?.other_names || ""}`.toLowerCase();
+				const phone = (record.trader?.phone || "").toLowerCase();
+				const ctshId = (record.trader?.ctsh_id || "").toLowerCase();
+				const term = participantSearch.trim().toLowerCase();
+				if (
+					!name.includes(term) &&
+					!phone.includes(term) &&
+					!ctshId.includes(term)
+				) {
+					return false;
+				}
+			}
+			return true;
+		})
+		.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
 	// Helper function to highlight search terms
 	const highlightSearchTerm = (text, searchTerm) => {
@@ -1725,76 +1743,28 @@ const ViewScheme = () => {
 								{/* Participants List */}
 								<Card
 									title={
-										<Row
-											justify="space-between"
-											align="middle"
-											gutter={[8, 8]}
-											wrap>
-											<Col>
-												<Space>
-													<TeamOutlined style={{ color: "#1890ff" }} />
-													<span>
-														Scheme Participants
-														{applicationsData?.empowermentSchemeApplications
-															?.paginatorInfo?.total !== undefined && (
-															<Badge
-																count={
-																	applicationsData.empowermentSchemeApplications
-																		.paginatorInfo.total
-																}
-																showZero
-																color="#1890ff"
-																style={{ marginLeft: 8 }}
-															/>
-														)}
-													</span>
-												</Space>
-											</Col>
-											{selectedParticipants.length > 0 && (
-												<Col>
-													<Popconfirm
-														title={`Remove ${selectedParticipants.length} participant${selectedParticipants.length > 1 ? "s" : ""}?`}
-														description="This will remove all selected participants from the scheme."
-														okText="Remove All"
-														okType="danger"
-														cancelText="Cancel"
-														onConfirm={handleBulkRemove}>
-														<Button
-															danger
-															size="small"
-															loading={bulkRemoving}
-															icon={<DeleteOutlined />}>
-															Remove Selected ({selectedParticipants.length})
-														</Button>
-													</Popconfirm>
-												</Col>
-											)}
-											<Col>
-												<Button
-													size="small"
-													icon={<FilePdfOutlined />}
-													loading={pdfExporting}
-													disabled={filteredParticipants.length === 0}
-													onClick={exportToPdf}
-													style={{ color: "#cf1322", borderColor: "#ffa39e" }}>
-													Export PDF
-												</Button>
-											</Col>
-											<Col>
-												<Button
-													size="small"
-													icon={<DownloadOutlined />}
-													loading={excelExporting}
-													disabled={filteredParticipants.length === 0}
-													onClick={handleExportToExcel}
-													style={{ color: "#389e0d", borderColor: "#b7eb8f" }}>
-													Export Excel
-												</Button>
-											</Col>
-										</Row>
-									}
-									extra={
-										<Space wrap>
+										<Space>
+											<TeamOutlined style={{ color: "#1890ff" }} />
+											<span>
+												Scheme Participants
+												{applicationsData?.empowermentSchemeApplications
+													?.paginatorInfo?.total !== undefined && (
+													<Badge
+														count={
+															applicationsData.empowermentSchemeApplications
+																.paginatorInfo.total
+														}
+														showZero
+														color="#1890ff"
+														style={{ marginLeft: 8 }}
+													/>
+												)}
+											</span>
+										</Space>
+									}>
+									{/* Toolbar */}
+									<Row gutter={[8, 8]} style={{ marginBottom: 12 }}>
+										<Col xs={24} sm={12} md={8}>
 											<Input
 												placeholder="Search participants..."
 												value={participantSearch}
@@ -1805,8 +1775,10 @@ const ViewScheme = () => {
 												prefix={<SearchOutlined />}
 												allowClear
 												size="small"
-												style={{ width: 200 }}
+												style={{ width: "100%" }}
 											/>
+										</Col>
+										<Col xs={24} sm={12} md={isSuperAdmin ? 5 : 8}>
 											<Select
 												showSearch
 												allowClear
@@ -1822,14 +1794,16 @@ const ViewScheme = () => {
 													setParticipantLocationFilter(val ?? null);
 													setParticipantPage(1);
 												}}
-												style={{ width: 190 }}>
+												style={{ width: "100%" }}>
 												{tradeLocations.map((loc) => (
 													<Option key={loc.id} value={loc.name}>
 														{loc.name}
 													</Option>
 												))}
 											</Select>
-											{isSuperAdmin && (
+										</Col>
+										{isSuperAdmin && (
+											<Col xs={24} sm={12} md={5}>
 												<Select
 													showSearch
 													allowClear
@@ -1845,16 +1819,55 @@ const ViewScheme = () => {
 														setParticipantTradeFilter(val ?? null);
 														setParticipantPage(1);
 													}}
-													style={{ width: 190 }}>
+													style={{ width: "100%" }}>
 													{trades.map((trade) => (
 														<Option key={trade.id} value={trade.name}>
 															{trade.name}
 														</Option>
 													))}
 												</Select>
-											)}
-										</Space>
-									}>
+											</Col>
+										)}
+										<Col xs={24} sm={12} md={isSuperAdmin ? 6 : 8}>
+											<Flex wrap gap={8} justify="end" style={{ width: "100%" }}>
+												{selectedParticipants.length > 0 && (
+													<Popconfirm
+														title={`Remove ${selectedParticipants.length} participant${selectedParticipants.length > 1 ? "s" : ""}?`}
+														description="This will remove all selected participants from the scheme."
+														okText="Remove All"
+														okType="danger"
+														cancelText="Cancel"
+														onConfirm={handleBulkRemove}>
+														<Button
+															danger
+															size="small"
+															loading={bulkRemoving}
+															icon={<DeleteOutlined />}>
+															Remove Selected ({selectedParticipants.length})
+														</Button>
+													</Popconfirm>
+												)}
+												<Button
+													size="small"
+													icon={<FilePdfOutlined />}
+													loading={pdfExporting}
+													disabled={filteredParticipants.length === 0}
+													onClick={exportToPdf}
+													style={{ color: "#cf1322", borderColor: "#ffa39e" }}>
+													Export PDF
+												</Button>
+												<Button
+													size="small"
+													icon={<DownloadOutlined />}
+													loading={excelExporting}
+													disabled={filteredParticipants.length === 0}
+													onClick={handleExportToExcel}
+													style={{ color: "#389e0d", borderColor: "#b7eb8f" }}>
+													Export Excel
+												</Button>
+											</Flex>
+										</Col>
+									</Row>
 									<Table
 										loading={applicationsLoading || bulkRemoving}
 										rowSelection={{
@@ -1894,13 +1907,32 @@ const ViewScheme = () => {
 																	? `data:image/jpeg;base64,${record.trader.photo}`
 																	: null
 															}
-															style={{ backgroundColor: "#1890ff" }}
+															style={{
+																backgroundColor: "#1890ff",
+																cursor: record.trader?.photo
+																	? "pointer"
+																	: "default"
+															}}
 															icon={<UserOutlined />}
+															onClick={(e) => {
+																if (record.trader?.photo) {
+																	e.stopPropagation();
+																	setLightboxImage(record.trader.photo);
+																}
+															}}
 														/>
 														<div>
 															<div className="font-medium">
-																{`${record.trader?.surname || ""} ${record.trader?.other_names || ""}`.trim() ||
-																	"—"}
+																{record.trader?.uuid ? (
+																	<Link
+																		to={`/admin/trader/?id=${record.trader.uuid}`}>
+																		{`${record.trader?.surname || ""} ${record.trader?.other_names || ""}`.trim() ||
+																			"—"}
+																	</Link>
+																) : (
+																	`${record.trader?.surname || ""} ${record.trader?.other_names || ""}`.trim() ||
+																	"—"
+																)}
 															</div>
 															{record.trader?.ctsh_id && (
 																<Tag
@@ -2008,6 +2040,30 @@ const ViewScheme = () => {
 						)}
 					</Space>
 				</div>
+
+				{/* ── Lightbox Modal ────────────────────────────────────────── */}
+				<Modal
+					open={!!lightboxImage}
+					onCancel={() => setLightboxImage(null)}
+					footer={null}
+					centered
+					width="auto"
+					styles={{ body: { padding: 0, textAlign: "center" } }}
+					destroyOnClose>
+					{lightboxImage && (
+						<img
+							src={`data:image/jpeg;base64,${lightboxImage}`}
+							alt="Participant photo"
+							style={{
+								maxWidth: "80vw",
+								maxHeight: "80vh",
+								objectFit: "contain",
+								display: "block",
+								margin: "0 auto"
+							}}
+						/>
+					)}
+				</Modal>
 
 				{/* ── Quick Add Trade Location Modal ────────────────────────── */}
 				<Modal

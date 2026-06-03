@@ -26,6 +26,7 @@ import {
 	Descriptions,
 	Row,
 	Col,
+	Flex,
 	Statistic,
 	Grid,
 	message
@@ -159,6 +160,7 @@ const SchemeApplicationsManagement = () => {
 	const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 	const [bulkRemoving, setBulkRemoving] = useState(false);
 	const [pdfExporting, setPdfExporting] = useState(false);
+	const [lightboxImage, setLightboxImage] = useState(null);
 	const screens = Grid.useBreakpoint();
 	const isMobile = !screens.sm;
 	const PAGE_SIZE = 20;
@@ -185,7 +187,8 @@ const SchemeApplicationsManagement = () => {
 		variables: {
 			empowerment_scheme_id: schemeData?.empowermentScheme?.id,
 			first: prospectiveFirst,
-			page: prospectiveQueryPage
+			page: prospectiveQueryPage,
+			orderBy: [{ column: "UPDATED_AT", order: "DESC" }]
 		},
 		skip: !schemeData?.empowermentScheme?.id,
 		fetchPolicy: "cache-and-network"
@@ -200,7 +203,8 @@ const SchemeApplicationsManagement = () => {
 			empowerment_scheme_id: schemeData?.empowermentScheme?.id,
 			status: "COMPLETED",
 			first: PAGE_SIZE,
-			page: beneficiaryPage
+			page: beneficiaryPage,
+			orderBy: [{ column: "UPDATED_AT", order: "DESC" }]
 		},
 		skip: !schemeData?.empowermentScheme?.id,
 		fetchPolicy: "cache-and-network"
@@ -363,40 +367,44 @@ const SchemeApplicationsManagement = () => {
 	const existingTraderIds = allApplications.map((a) => a.trader?.id);
 
 	// ─── Search filtering (client-side on top of server result) ────────────────
-	const filteredProspective = prospectiveList.filter((a) => {
-		if (
-			prospectiveLocationFilter &&
-			a.trader?.trade_location !== prospectiveLocationFilter
-		) {
-			return false;
-		}
-		if (prospectiveSearch) {
-			const s = prospectiveSearch.toLowerCase();
-			const name =
-				`${a.trader?.surname} ${a.trader?.other_names}`.toLowerCase();
+	const filteredProspective = prospectiveList
+		.filter((a) => {
 			if (
-				!name.includes(s) &&
-				!a.trader?.ctsh_id?.toLowerCase().includes(s) &&
-				!a.trader?.phone?.includes(prospectiveSearch)
+				prospectiveLocationFilter &&
+				a.trader?.trade_location !== prospectiveLocationFilter
 			) {
 				return false;
 			}
-		}
-		return true;
-	});
-
-	const filteredBeneficiaries = beneficiarySearch
-		? beneficiaryList.filter((a) => {
-				const s = beneficiarySearch.toLowerCase();
+			if (prospectiveSearch) {
+				const s = prospectiveSearch.toLowerCase();
 				const name =
 					`${a.trader?.surname} ${a.trader?.other_names}`.toLowerCase();
-				return (
-					name.includes(s) ||
-					a.trader?.ctsh_id?.toLowerCase().includes(s) ||
-					a.trader?.phone?.includes(beneficiarySearch)
-				);
-			})
-		: beneficiaryList;
+				if (
+					!name.includes(s) &&
+					!a.trader?.ctsh_id?.toLowerCase().includes(s) &&
+					!a.trader?.phone?.includes(prospectiveSearch)
+				) {
+					return false;
+				}
+			}
+			return true;
+		})
+		.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+	const filteredBeneficiaries = (
+		beneficiarySearch
+			? beneficiaryList.filter((a) => {
+					const s = beneficiarySearch.toLowerCase();
+					const name =
+						`${a.trader?.surname} ${a.trader?.other_names}`.toLowerCase();
+					return (
+						name.includes(s) ||
+						a.trader?.ctsh_id?.toLowerCase().includes(s) ||
+						a.trader?.phone?.includes(beneficiarySearch)
+					);
+				})
+			: [...beneficiaryList]
+	).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
 	// ─── Helpers ──────────────────────────────────────────────────────────────
 	const formatCurrency = (amount) =>
@@ -751,9 +759,15 @@ const SchemeApplicationsManagement = () => {
 						}
 						icon={<UserOutlined />}
 						size={36}
+						style={{ cursor: r.trader?.photo ? "pointer" : "default" }}
+						onClick={() => r.trader?.photo && setLightboxImage(r.trader.photo)}
 					/>
 					<div>
-						<Text strong>{traderFullName(r.trader)}</Text>
+						<Link
+							to={r.trader?.uuid ? `/admin/trader/?id=${r.trader.uuid}` : "#"}
+							style={{ fontWeight: 600 }}>
+							{traderFullName(r.trader)}
+						</Link>
 						<br />
 						<Text type="secondary" style={{ fontSize: 12 }}>
 							<IdcardOutlined style={{ marginRight: 4 }} />
@@ -839,9 +853,15 @@ const SchemeApplicationsManagement = () => {
 						}
 						icon={<UserOutlined />}
 						size={36}
+						style={{ cursor: r.trader?.photo ? "pointer" : "default" }}
+						onClick={() => r.trader?.photo && setLightboxImage(r.trader.photo)}
 					/>
 					<div>
-						<Text strong>{traderFullName(r.trader)}</Text>
+						<Link
+							to={r.trader?.uuid ? `/admin/trader/?id=${r.trader.uuid}` : "#"}
+							style={{ fontWeight: 600 }}>
+							{traderFullName(r.trader)}
+						</Link>
 						<br />
 						<Text type="secondary" style={{ fontSize: 12 }}>
 							<IdcardOutlined style={{ marginRight: 4 }} />
@@ -1570,7 +1590,7 @@ const SchemeApplicationsManagement = () => {
 							</Select>
 						</Col>
 						<Col xs={24} md={6}>
-							<Space wrap style={{ width: "100%", justifyContent: "flex-end" }}>
+							<Flex wrap gap={8} justify="end" style={{ width: "100%" }}>
 								{selectedRowKeys.length > 0 && (
 									<Popconfirm
 										title={`Remove ${selectedRowKeys.length} selected trader(s) from this scheme?`}
@@ -1598,7 +1618,7 @@ const SchemeApplicationsManagement = () => {
 									onClick={() => setShowAddModal(true)}>
 									Add Traders
 								</Button>
-							</Space>
+							</Flex>
 						</Col>
 					</Row>
 
@@ -1663,7 +1683,7 @@ const SchemeApplicationsManagement = () => {
 							/>
 						</Col>
 						<Col xs={24} sm={10} md={12}>
-							<Space wrap style={{ width: "100%", justifyContent: "flex-end" }}>
+							<Flex wrap gap={8} justify="end" style={{ width: "100%" }}>
 								<Button
 									icon={<DownloadOutlined />}
 									onClick={handleExportBeneficiaries}
@@ -1683,7 +1703,7 @@ const SchemeApplicationsManagement = () => {
 										onClick={() => refetchBeneficiaries()}
 									/>
 								</Tooltip>
-							</Space>
+							</Flex>
 						</Col>
 					</Row>
 
@@ -1751,6 +1771,30 @@ const SchemeApplicationsManagement = () => {
 
 			{renderAddModal()}
 			{renderDisburseModal()}
+
+			{/* ── Lightbox Modal ──────────────────────────────────────── */}
+			<Modal
+				open={!!lightboxImage}
+				onCancel={() => setLightboxImage(null)}
+				footer={null}
+				centered
+				width="auto"
+				styles={{ body: { padding: 0, textAlign: "center" } }}
+				destroyOnClose>
+				{lightboxImage && (
+					<img
+						src={`data:image/jpeg;base64,${lightboxImage}`}
+						alt="Trader photo"
+						style={{
+							maxWidth: "80vw",
+							maxHeight: "80vh",
+							objectFit: "contain",
+							display: "block",
+							margin: "0 auto"
+						}}
+					/>
+				)}
+			</Modal>
 		</div>
 	);
 };

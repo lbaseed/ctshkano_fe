@@ -25,7 +25,8 @@ import {
 	Empty,
 	Spin,
 	Alert,
-	Image
+	Image,
+	Popconfirm
 } from "antd";
 import {
 	UserOutlined,
@@ -49,7 +50,10 @@ import {
 import CameraNew from "./CameraNew";
 import { Root, Preview, Footer, GlobalStyle } from "./mainStyle";
 import Guarantor from "./Guarantor";
-import { UPLOAD_TRADER_PHOTO } from "../../../gql/mutations/mutations";
+import {
+	UPLOAD_TRADER_PHOTO,
+	REMOVE_TRADER_PHOTO
+} from "../../../gql/mutations/mutations";
 import BankDetails from "./BankDetails";
 import EditTraderProfile from "./EditTraderProfile";
 import moment from "moment";
@@ -83,6 +87,9 @@ const Trader = () => {
 
 	const [uploadPhoto, { loading: uploadLoading }] =
 		useMutation(UPLOAD_TRADER_PHOTO);
+
+	const [removePhoto, { loading: removePhotoLoading }] =
+		useMutation(REMOVE_TRADER_PHOTO);
 
 	const { lgaOptions, loading: lgasLoading } = useLgas(true);
 
@@ -139,6 +146,20 @@ const Trader = () => {
 				toast.success("Photo Saved Successfully");
 		} catch (error) {
 			toast.error(error);
+		}
+	};
+
+	const handleRemovePhoto = async () => {
+		try {
+			const result = await removePhoto({
+				variables: { trader_uuid: trader?.uuid }
+			});
+			if (result?.data?.removeTraderPhoto) {
+				setTrader(result.data.removeTraderPhoto);
+				toast.success("Photo removed successfully");
+			}
+		} catch (error) {
+			toast.error(error?.message || "Failed to remove photo");
 		}
 	};
 
@@ -247,6 +268,28 @@ const Trader = () => {
 														}
 													/>
 												</div>
+
+												{/* Remove photo link */}
+												{trader?.photo && !isCameraOpen && !cardImage && (
+													<div className="mt-2">
+														<Popconfirm
+															title="Remove profile photo?"
+															description="This will permanently delete the trader's photo."
+															okText="Remove"
+															okType="danger"
+															cancelText="Cancel"
+															onConfirm={handleRemovePhoto}>
+															<Button
+																type="link"
+																danger
+																size="small"
+																loading={removePhotoLoading}
+																style={{ padding: 0 }}>
+																Remove Photo
+															</Button>
+														</Popconfirm>
+													</div>
+												)}
 
 												{/* Photo Upload Section */}
 												{isCameraOpen && (
