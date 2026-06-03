@@ -51,6 +51,7 @@ import {
 } from "@ant-design/icons";
 import moment from "moment";
 import TradersPdfDocument from "./TradersPdfDocument";
+import { useLgas } from "../../../hooks/useLgas";
 
 // --- PDF helpers (module-level, no component state needed) ---
 const PDF_CHUNK_SIZE = 200; // max traders per PDF file
@@ -131,6 +132,7 @@ const ViewTraders = () => {
 	const [paginatorInfo, setPaginatorInfo] = useState({});
 	const [cookies, setCookie] = useCookies(["ctshkano"]);
 	const isStaff = cookies?.ctshkano?.user?.clrs === "STAFF";
+	const { lgaOptions, loading: lgasLoading } = useLgas(true);
 	const [showModal, setShowModal] = useState(false);
 	const [searchText, setSearchText] = useState("");
 	const [genderFilter, setGenderFilter] = useState(null);
@@ -138,6 +140,7 @@ const ViewTraders = () => {
 	const [tradeFilterName, setTradeFilterName] = useState(null); // Store trade name for display
 	const [allExportData, setAllExportData] = useState([]);
 	const [locationFilter, setLocationFilter] = useState(null);
+	const [lgaFilter, setLgaFilter] = useState(null);
 	const [dateRange, setDateRange] = useState(null); // [moment, moment] | null
 	const [pageSize, setPageSize] = useState(10);
 	const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth > 1024);
@@ -181,6 +184,7 @@ const ViewTraders = () => {
 	const { loading, error, data, refetch } = useQuery(GET_TRADERS_LIST, {
 		variables: {
 			...(tradeFilter && { trade_id: tradeFilter }),
+			...(lgaFilter && { lga_id: lgaFilter }),
 			...(debouncedSearch && { search: debouncedSearch }),
 			...getDateRangeVars(),
 			first: pageSize,
@@ -301,6 +305,7 @@ const ViewTraders = () => {
 		const exportPageSize = 500;
 		const firstResult = await refetch({
 			...(tradeFilter && { trade_id: tradeFilter }),
+			...(lgaFilter && { lga_id: lgaFilter }),
 			...(debouncedSearch && { search: debouncedSearch }),
 			...getDateRangeVars(),
 			first: exportPageSize,
@@ -329,6 +334,7 @@ const ViewTraders = () => {
 					batchPages.map((page) =>
 						refetch({
 							...(tradeFilter && { trade_id: tradeFilter }),
+							...(lgaFilter && { lga_id: lgaFilter }),
 							...(debouncedSearch && { search: debouncedSearch }),
 							first: exportPageSize,
 							page,
@@ -426,11 +432,15 @@ const ViewTraders = () => {
 			chunks.push(tradersWithPhotos.slice(i, i + PDF_CHUNK_SIZE));
 		}
 
+		const lgaFilterLabel = lgaFilter
+			? lgaOptions.find((l) => l.value === lgaFilter)?.label || lgaFilter
+			: null;
 		const filters = {
 			searchText,
 			genderFilter,
 			tradeFilterName,
 			locationFilter,
+			lgaFilter: lgaFilterLabel,
 			dateRangeLabel:
 				dateRange?.[0] && dateRange?.[1]
 					? `${dateRange[0].format("DD MMM YYYY")} – ${dateRange[1].format("DD MMM YYYY")}`
@@ -491,6 +501,7 @@ const ViewTraders = () => {
 		setTradeFilter(null);
 		setTradeFilterName(null);
 		setLocationFilter(null);
+		setLgaFilter(null);
 		setDateRange(null);
 		setCurrentPage(1);
 		message.success("Filters cleared");
@@ -514,6 +525,7 @@ const ViewTraders = () => {
 		setCurrentPage(1);
 		refetch({
 			...(tradeFilter && { trade_id: tradeFilter }),
+			...(lgaFilter && { lga_id: lgaFilter }),
 			...(debouncedSearch && { search: debouncedSearch }),
 			...getDateRangeVars(),
 			first: pageSize,
@@ -527,6 +539,7 @@ const ViewTraders = () => {
 		setCurrentPage(1);
 		refetch({
 			...(tradeFilter && { trade_id: tradeFilter }),
+			...(lgaFilter && { lga_id: lgaFilter }),
 			...(debouncedSearch && { search: debouncedSearch }),
 			...getDateRangeVars(),
 			first: pageSize,
@@ -535,6 +548,20 @@ const ViewTraders = () => {
 			direction: sortDirection
 		});
 	}, [dateRange]);
+
+	useEffect(() => {
+		setCurrentPage(1);
+		refetch({
+			...(tradeFilter && { trade_id: tradeFilter }),
+			...(lgaFilter && { lga_id: lgaFilter }),
+			...(debouncedSearch && { search: debouncedSearch }),
+			...getDateRangeVars(),
+			first: pageSize,
+			page: 1,
+			orderBy: orderBy,
+			direction: sortDirection
+		});
+	}, [lgaFilter]);
 
 	useEffect(() => {
 		const handleResize = () => {
@@ -585,6 +612,7 @@ const ViewTraders = () => {
 	useEffect(() => {
 		refetch({
 			...(tradeFilter && { trade_id: tradeFilter }),
+			...(lgaFilter && { lga_id: lgaFilter }),
 			...(debouncedSearch && { search: debouncedSearch }),
 			...getDateRangeVars(),
 			first: pageSize,
@@ -967,7 +995,7 @@ const ViewTraders = () => {
 
 							<Row gutter={[16, 16]}>
 								{/* Search Input */}
-								<Col xs={24} md={12} lg={8}>
+								<Col xs={24} md={12} lg={6}>
 									<Input
 										placeholder="Search by name, phone, ID, or email..."
 										value={searchText}
@@ -1036,8 +1064,33 @@ const ViewTraders = () => {
 									</Select>
 								</Col>
 
+								{/* LGA Filter */}
+								<Col xs={24} md={6} lg={4}>
+									<Select
+										placeholder={lgasLoading ? "Loading LGAs..." : "LGA"}
+										value={lgaFilter}
+										onChange={setLgaFilter}
+										size="large"
+										style={{ width: "100%", borderRadius: "8px" }}
+										allowClear
+										showSearch
+										filterOption={(input, option) =>
+											option?.label?.toLowerCase().includes(input.toLowerCase())
+										}
+										disabled={lgasLoading}
+										notFoundContent={
+											lgasLoading ? "Loading..." : "No LGAs available"
+										}>
+										{lgaOptions.map((lga) => (
+											<Option key={lga.value} value={lga.value} label={lga.label}>
+												<EnvironmentOutlined /> {lga.label}
+											</Option>
+										))}
+									</Select>
+								</Col>
+
 								{/* Registration Date Range Filter */}
-								<Col xs={24} md={12} lg={8}>
+								<Col xs={24} md={12} lg={6}>
 									<RangePicker
 										value={dateRange}
 										onChange={(dates) => setDateRange(dates)}
@@ -1129,11 +1182,12 @@ const ViewTraders = () => {
 								<Text type="secondary">
 									Showing <Text strong>{stats.filtered}</Text> of{" "}
 									<Text strong>{stats.total + 133670}</Text> traders
-									{(searchText ||
-										genderFilter ||
-										tradeFilter ||
-										locationFilter ||
-										dateRange) && <span> (filtered)</span>}
+								{(searchText ||
+									genderFilter ||
+									tradeFilter ||
+									locationFilter ||
+									lgaFilter ||
+									dateRange) && <span> (filtered)</span>}
 									{dateRange?.[0] && dateRange?.[1] && (
 										<span>
 											{" "}

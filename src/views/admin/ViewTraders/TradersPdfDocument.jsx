@@ -149,6 +149,7 @@ const formatFilters = ({
 	genderFilter,
 	tradeFilterName,
 	locationFilter,
+	lgaFilter,
 	dateRangeLabel
 }) => {
 	const activeFilters = [];
@@ -157,6 +158,7 @@ const formatFilters = ({
 	if (genderFilter) activeFilters.push(`Gender: ${genderFilter}`);
 	if (tradeFilterName) activeFilters.push(`Trade: ${tradeFilterName}`);
 	if (locationFilter) activeFilters.push(`Location: ${locationFilter}`);
+	if (lgaFilter) activeFilters.push(`LGA: ${lgaFilter}`);
 	if (dateRangeLabel) activeFilters.push(`Registered: ${dateRangeLabel}`);
 
 	return activeFilters.length > 0 ? activeFilters.join(" | ") : "All traders";

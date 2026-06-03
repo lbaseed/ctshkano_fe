@@ -140,6 +140,7 @@ export const GET_TRADERS_LIST = gql`
 	${CORE_LOCATION_FIELDS}
 	query gqlGetTradersList(
 		$trade_id: ID
+		$lga_id: ID
 		$search: String
 		$date_from: String
 		$date_to: String
@@ -150,6 +151,7 @@ export const GET_TRADERS_LIST = gql`
 	) {
 		traderList(
 			trade_id: $trade_id
+			lga_id: $lga_id
 			search: $search
 			date_from: $date_from
 			date_to: $date_to
